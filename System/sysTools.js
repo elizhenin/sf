@@ -115,6 +115,55 @@ module.exports = function () {
         return result;
 
     };
+
+    global.sha1 = async function (str) {
+        let result = ''
+        let toUTF8Array = function(str) {
+            var utf8 = [];
+            for (var i = 0; i < str.length; i++) {
+                var charcode = str.charCodeAt(i);
+                if (charcode < 0x80) utf8.push(charcode);
+                else if (charcode < 0x800) {
+                    utf8.push(0xc0 | (charcode >> 6),
+                        0x80 | (charcode & 0x3f));
+                } else if (charcode < 0xd800 || charcode >= 0xe000) {
+                    utf8.push(0xe0 | (charcode >> 12),
+                        0x80 | ((charcode >> 6) & 0x3f),
+                        0x80 | (charcode & 0x3f));
+                }
+                // surrogate pair
+                else {
+                    i++;
+                    // UTF-16 encodes 0x10000-0x10FFFF by
+                    // subtracting 0x10000 and splitting the
+                    // 20 bits of 0x0-0xFFFFF into two halves
+                    charcode = 0x10000 + (((charcode & 0x3ff) << 10) |
+                        (str.charCodeAt(i) & 0x3ff));
+                    utf8.push(0xf0 | (charcode >> 18),
+                        0x80 | ((charcode >> 12) & 0x3f),
+                        0x80 | ((charcode >> 6) & 0x3f),
+                        0x80 | (charcode & 0x3f));
+                }
+            }
+            return utf8;
+        }
+
+        let byteToUint8Array = function(byteArray) {
+            var uint8Array = new Uint8Array(byteArray.length);
+            for (var i = 0; i < uint8Array.length; i++) {
+                uint8Array[i] = byteArray[i];
+            }
+
+            return uint8Array;
+        }
+
+        let buf2hex = function(buffer) { // buffer is an ArrayBuffer
+            return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+        }
+        result = buf2hex(await crypto.subtle.digest('SHA-1', byteToUint8Array(toUTF8Array(str))));
+        return result;
+    }
+    
     global.empty = function (a) { //TODO make to real work
         var exists = false;
         if (typeof (a) == 'undefined') {} else {
