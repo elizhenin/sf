@@ -20,6 +20,7 @@
     Application.lib.request = require('request-promise');
     Application.lib['sync-sqlite'] = require('sync-sqlite');
     Application.lib.StrUnEscape = require('backslash');
+    Application.lib.sha1 = require('sha-1');
     //set up config parameters
     Application.config = {};
     /*
