@@ -23,7 +23,7 @@
         "imagemin-svgo": "^8.0.0",
         "imagemin-webp": "^6.0.0",
         "ini-parser": "^0.0.2",
-        "knex": "^0.17.6",
+        "knex": "^0.19.5",
         "mssql": "^6.3.1",
         "mysql": "^2.18.1",
         "mysql2": "^2.2.5",
