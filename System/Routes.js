@@ -80,7 +80,22 @@ module.exports = {
                     if (typeof route.method != 'undefined')
                         method = route.method;
 
-                    Application.Routes[subdomain][method](route.uri, function (req, res) {
+                    Application.Routes[subdomain][method](route.uri, async function (req, res) {
+
+                        let SomeError = false;
+
+                        //apply middlewares
+                        if (typeof Application.Middleware != "undefined") {
+                            for (let middleware_name in Application.Middleware) {
+                                let OneMiddleware = Application.Middleware[middleware_name];
+                                try {
+                                    await OneMiddleware(req, res);
+                                } catch (e) {
+                                    SomeError = "Application.Middleware." + middleware_name + "() causes problem " + " [" + e + "]";
+                                }
+                            }
+                        }
+                        //apply main route code
                         var template = 'default';
                         if (typeof route.template != 'undefined')
                             template = route.template;
@@ -104,64 +119,119 @@ module.exports = {
                         if (typeof req.params.action != 'undefined')
                             action = req.params.action;
 
+                        /*
+                        Work procedure chain:
+                        1) Template._before
+                        2) Controller._before
+                        3) Controller.Action
+                        4) Controller._after
+                        5) Template.Action
+                        6) Template._after
+                        */
+
+                        let result = {};
+                        //1
+                        let Template_before = async function (req, res, result) {
+                            return result;
+                        };
+                        if (typeof Application.module.ObjSelector(Application.Controller, "Template")._before != "undefined") {
+                            Template_before = Application.module.ObjSelector(Application.Controller, "Template")._before;
+                        }
+
+                        try {
+                            result = await Template_before(req, res, result);
+                        } catch (e) {
+                            //found error on template._before stage
+                            SomeError = e;
+                        }
+
+                        //2
+                        let Controller_before = async function (req, res, result) {
+                            return result;
+                        };
+                        if (typeof Application.module.ObjSelector(Application.Controller, controller)._before != "undefined") {
+                            Controller_before = Application.module.ObjSelector(Application.Controller, controller)._before;
+                        }
+                        try {
+                            result = await Controller_before(req, res, result);
+                        } catch (e) {
+                            //found error on controller._before stage
+                            SomeError = e;
+                        }
+
+                        //3
                         try {
                             let Controller_Action = Application.module.ObjSelector(Application.Controller, controller)[action];
-                            let Controller_before = async function (req, res) {
-                                return [req, res];
-                            };
-                            let Controller_after = async function (req, res, result) {
+                            result = await Controller_Action(req, res, result);
+                        } catch (e) {
+                            //found error on controller stage
+                            SomeError = "Application.Controller." + controller + "." + action + "() causes problem " + " [" + e + "]";
+                        }
+
+                        //4
+                        let Controller_after = async function (req, res, result) {
+                            return result;
+                        };
+                        if (typeof Application.module.ObjSelector(Application.Controller, controller)._after != "undefined") {
+                            Controller_after = Application.module.ObjSelector(Application.Controller, controller)._after;
+                        }
+                        try {
+                            result = await Controller_after(req, res, result);
+                        } catch (e) {
+                            //found error on controller._after stage
+                            SomeError = e;
+                        }
+
+                        //5
+                        let Template_Action = async function (req, res, result) {
+                            return result;
+                        };
+                        if (typeof Application.module.ObjSelector(Application.Controller, "Template")[template] != "undefined") {
+                            Template_Action = Application.module.ObjSelector(Application.Controller, "Template")[template];
+                        }
+                        try {
+                            result = await Template_Action(req, res, result);
+                        } catch (e) {
+                            //found error on controller stage
+                            SomeError = "Application.Controller.Template." + template + "() causes problem " + " [" + e + "]";
+                        }
+                        //6
+                        let Template_after = async function (req, res, result) {
+                            return result;
+                        };
+                        if (typeof Application.module.ObjSelector(Application.Controller, "Template")._after != "undefined") {
+                            Template_after = Application.module.ObjSelector(Application.Controller, "Template")._after;
+                        }
+                        try {
+                            result = await Template_after(req, res, result);
+                        } catch (e) {
+                            //found error on template._after stage
+                            SomeError = e;
+                        }
+
+                        if (!SomeError) { //all ok
+                            if (!res.headersSent) res.send(result);
+                            Application.module.SrvLogger.access(req);
+                        } else { //errors found
+                            Application.module.SrvLogger.error(req, SomeError);
+
+                            let Template_Error = async function (req, res, result) {
                                 return result;
                             };
-                            if (typeof Application.module.ObjSelector(Application.Controller, controller)._before != "undefined") {
-                                Controller_before = Application.Controller[controller]._before;
+                            if (typeof Application.module.ObjSelector(Application.Controller, "Template").error != "undefined") {
+                                Template_Error = Application.module.ObjSelector(Application.Controller, "Template").error;
                             }
-                            if (typeof Application.module.ObjSelector(Application.Controller, controller)._after != "undefined") {
-                                Controller_after = Application.Controller[controller]._after;
+                            try {
+                                result = await Template_Error(req, res, SomeError);
+                            } catch (e) {
+                                //found error on Template.error stage
+                                SomeError = e;
+                                Application.module.SrvLogger.error(req, SomeError);
+                                if (!res.headersSent) res.send(SomeError);
+                            } finally {
+                                if (!res.headersSent) res.send(result);
                             }
-                            let Template_Model = new Application.Model.Template();
-                            var Template_Action = Template_Model[template];
 
-                            let Template_Error = Template_Model.error;
-
-
-                            //new block
-
-
-                            let Route_promise = new Promise(function (resolve, reject) {
-                                Controller_before(req, res).then(function (from_before) {
-                                    Controller_Action(...from_before).then(function (from_Controller) {
-                                        Controller_after(...from_before, from_Controller).then(function (from_after) {
-                                            Template_Action(from_after).then(resolve).catch(function (SomeError) {
-                                                //found error on template stage
-                                                Template_Error(SomeError).then(resolve).catch(reject);
-                                            });
-                                        }).catch(function (SomeError) {
-                                            //found error on controller._after stage
-                                            Template_Error(SomeError).then(resolve).catch(reject);
-                                        });
-
-                                    }).catch(function (SomeError) {
-                                        //found error on controller stage
-                                        Template_Error(SomeError).then(resolve).catch(reject);
-                                    });
-                                }).catch(function (SomeError) {
-                                    //found error on controller._before stage
-                                    Template_Error(SomeError).then(resolve).catch(reject);
-                                });
-
-                            });
-
-                            Route_promise.then(function (TemplatedContent) {
-                                if (TemplatedContent) res.send(TemplatedContent);
-                                Application.module.SrvLogger.access(req);
-                            }).catch(function (error) {
-                                Application.module.SrvLogger.error(req, error);
-                                res.send(error.toString());
-                            });
-
-                        } catch (e) {
-                            Application.module.SrvLogger.error(req, e);
-                            res.send(e.toString());
                         }
 
                     }); //end HTTP.METHOD

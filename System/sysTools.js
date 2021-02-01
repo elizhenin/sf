@@ -12,45 +12,29 @@ module.exports = function () {
         return string.replace(regex, "");
     };
 
+    global.trim = function(string){
+        let result = ""
+        if(typeof string != "undefined") result = string.toString().trim();
+        return result
+    }
+
+    global.explode = function(divider,string){
+        let result = []
+        if(typeof string != "undefined") result = string.toString().split(divider);
+        return result
+    }
 
     global.base64_encode = function (str) {
-        var base64EncodeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        var out, i, len;
-        var c1, c2, c3;
 
-        len = str.length;
-        i = 0;
-        out = "";
-        while (i < len) {
-            c1 = str.charCodeAt(i++) & 0xff;
-            if (i == len) {
-                out += base64EncodeChars.charAt(c1 >> 2);
-                out += base64EncodeChars.charAt((c1 & 0x3) << 4);
-                out += "==";
-                break;
-            }
-            c2 = str.charCodeAt(i++);
-            if (i == len) {
-                out += base64EncodeChars.charAt(c1 >> 2);
-                out += base64EncodeChars.charAt(((c1 & 0x3) << 4) | ((c2 & 0xF0) >> 4));
-                out += base64EncodeChars.charAt((c2 & 0xF) << 2);
-                out += "=";
-                break;
-            }
-            c3 = str.charCodeAt(i++);
-            out += base64EncodeChars.charAt(c1 >> 2);
-            out += base64EncodeChars.charAt(((c1 & 0x3) << 4) | ((c2 & 0xF0) >> 4));
-            out += base64EncodeChars.charAt(((c2 & 0xF) << 2) | ((c3 & 0xC0) >> 6));
-            out += base64EncodeChars.charAt(c3 & 0x3F);
-        }
-        return out;
+        return new Buffer.from(str).toString('base64');
+
     };
 
     global.base64_decode = function (str) {
-        return new Buffer(str, 'base64');
+        return new Buffer.from(str, 'base64').toString();
     };
 
-    global.md5 = function (str) {
+    global.md5 = function (str, as_bin = false) {
 
         function M(d) {
             for (var _, m = "0123456789ABCDEF", f = "", r = 0; r < d.length; r++) _ = d.charCodeAt(r), f += m.charAt(_ >>> 4 & 15) + m.charAt(15 & _);
@@ -110,7 +94,25 @@ module.exports = function () {
         }
         str = str.toString();
         result = M(V(Y(X(str), 8 * str.length)));
-        return result.toLowerCase();
+        result = result.toLowerCase();
+        if (as_bin) {
+            let hex2bin = function (hexSource) {
+                let hexdec = function (hexString) {
+                    hexString = (hexString + '').replace(/[^a-f0-9]/gi, '');
+                    return parseInt(hexString, 16);
+                };
+                var bin = '';
+                for (var i = 0; i < hexSource.length; i = i + 2) {
+                    bin += String.fromCharCode(hexdec(hexSource.substr(i, 2)));
+                }
+                return bin;
+            }
+
+
+
+            result = hex2bin(result);
+        }
+        return result;
 
     };
     global.empty = function (a) { //TODO make to real work
@@ -127,6 +129,47 @@ module.exports = function () {
         return result;
     };
 
+    global.usort = function(inputArr, sorter) {
+      
+        var valArr = []
+        var k = ''
+        var i = 0
+        var sortByReference = false
+        var populateArr = {}
+      
+        if (typeof sorter === 'string') {
+          sorter = this[sorter]
+        } else if (Object.prototype.toString.call(sorter) === '[object Array]') {
+          sorter = this[sorter[0]][sorter[1]]
+        }
+      
+        var iniVal = 'on'
+        sortByReference = iniVal === 'on'
+        populateArr = sortByReference ? inputArr : populateArr
+      
+        for (k in inputArr) {
+          // Get key and value arrays
+          if (inputArr.hasOwnProperty(k)) {
+            valArr.push(inputArr[k])
+            if (sortByReference) {
+              delete inputArr[k]
+            }
+          }
+        }
+        try {
+          valArr.sort(sorter)
+        } catch (e) {
+          return false
+        }
+        for (i = 0; i < valArr.length; i++) {
+          // Repopulate the old array
+          populateArr[i] = valArr[i]
+        }
+      
+        return sortByReference || populateArr
+      }
+
+      
     //add some useful functions from smalltalk
     Boolean.prototype.ifTrue = function (procedure) {
         if (this == true) procedure();

@@ -1,0 +1,13 @@
+[Unit]
+Description=name of application
+After=network-online.target
+
+[Service]
+Restart=on-failure
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/install_dir/
+ExecStart=/usr/bin/node /var/www/install_dir/.
+
+[Install]
+WantedBy=multi-user.target
