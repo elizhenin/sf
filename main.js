@@ -11,7 +11,6 @@
     Application.lib.path = require('path');
     Application.lib.fs = require('fs');
     Application.lib.fs_promises = require('fs').promises;
-    Application.lib['ini-parser'] = require('ini-parser');
     Application.lib.express = require('express');
     Application.lib['body-parser'] = require('body-parser');
     Application.lib['cookie-parser'] = require('cookie-parser');
@@ -21,6 +20,8 @@
     Application.lib['sync-sqlite'] = require('sync-sqlite');
     Application.lib.StrUnEscape = require('backslash');
     Application.lib.sha1 = require('sha-1');
+    Application.lib.busboy = require("busboy");
+    Application.lib.cyrillicToTranslit = new require("cyrillic-to-translit-js")();
     //set up config parameters
     Application.config = {};
     /*
@@ -33,18 +34,6 @@
     */
     Application._dirname = __dirname; //for use in unpacked mode
 
-    Application._ConfigLoader = function (branch, filename) {
-        var config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
-        branch = Object.assign(branch, Application.lib['ini-parser'].parse(config_text));
-        config_text = undefined;
-        if (typeof branch['#INCLUDE'] != 'undefined') {
-            for (key in branch['#INCLUDE']) {
-                branch[key] = {};
-                Application._ConfigLoader(branch[key], branch['#INCLUDE'][key]);
-            }
-        };
-    }
-    Application._ConfigLoader(Application.config, 'config.ini');
     //Set up directories
     Application.config.Directories = {};
     Application.config.Directories.Root = "";
@@ -55,6 +44,21 @@
     for (key in Application.config.Directories) {
         Application.config.Directories[key] = Application.lib.path.join(Application._dirname, Application.config.Directories[key]);
     }
+
+    //load config from ini
+    Application._ConfigLoader = function (branch, filename) {
+        let iniParser = require(Application.lib.path.join(Application.config.Directories.System,'IniParser.js'));
+        var config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
+        branch = Object.assign(branch, iniParser(config_text));
+        config_text = undefined;
+        if (typeof branch['#INCLUDE'] != 'undefined') {
+            for (key in branch['#INCLUDE']) {
+                branch[key] = {};
+                Application._ConfigLoader(branch[key], branch['#INCLUDE'][key]);
+            }
+        };
+    }
+    Application._ConfigLoader(Application.config, 'config.ini');
     //set up clustering
     if (Application.lib.cluster.isMaster) { // master process
 
@@ -72,26 +76,33 @@
         });
     } else { // worker process
 
-        //popularize with system modules in module branch
-        Application.module = {};
-
-        for (key in Application.config.Modules) {
-            Application.module[key] = require(Application.lib.path.join(Application.config.Directories.System, Application.config.Modules[key] + '.js'));
+        //popularize with system modules in System branch
+        Application.System = {};
+        {
+            let dir_list = Application.lib.fs.readdirSync(Application.config.Directories.System)
+            for(let i in dir_list){
+                let item = dir_list[i];
+                let ObjName = item.slice(0, -3); //remove ".js" symbols from end
+                    //add this js to namespace
+                    Application.System[ObjName] = require(Application.lib.path.join(Application.config.Directories.System, item));
+            }
         }
 
-        // Module View shortcut
-        if (typeof Application.module.View != 'undefined') {
-            global['View'] = Application.module.View;
+        // System.View shortcut
+        if (typeof Application.System.MarkerScript != 'undefined') {
+            global['View'] = Application.System.MarkerScript;
         }
 
         //some useful functions
-        Application.module.sysTools();
+        Application.System.sysTools();
 
-        //call AppLoader to load other MVC code
-        Application.module.AppLoader();
+        //call AppLoader to load other MVC code 
+        Application.System.AppLoader(Application);
+        //call ProjectLoader to load project from container file
+        // Application.System.ProjectLoader();
         //call PublicBuilder to build and minify css,js static files from FrontSrc to Public dir
         if (typeof Application.config.PublicBuilder != "undefined" && Application.config.PublicBuilder.Enable == 'true') {
-            await Application.module.PublicBuilder();
+            await Application.System.PublicBuilder();
         }
 
         //set up databases

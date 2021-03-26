@@ -9,10 +9,10 @@ module.exports = {
 
         return function (req, res, next) {
             req._subdomainLevel = req._subdomainLevel || 0;
-            var match = true;
+            let match = true;
 
-            var subdomain_expected = new RegExp(subdomain);
-            var subdomain_actual = req.subdomains.reverse().join('.');
+            let subdomain_expected = new RegExp(subdomain);
+            let subdomain_actual = req.subdomains.reverse().join('.');
             if (!subdomain_expected.exec(subdomain_actual)) {
                 match = false;
             }
@@ -34,10 +34,10 @@ module.exports = {
 
         return function (req, res, next) {
             req._subdomainLevel = req._subdomainLevel || 0;
-            var match = true;
+            let match = true;
 
-            var domain_expected = new RegExp(domain);
-            var domain_actual = req.get('host');
+            let domain_expected = new RegExp(domain);
+            let domain_actual = req.get('host');
             if (!domain_expected.exec(domain_actual)) {
                 match = false;
             }
@@ -82,6 +82,14 @@ module.exports = {
 
                     Application.Routes[subdomain][method](route.uri, async function (req, res) {
 
+                        //define context-specific View() function
+                        
+                        req.View = function(view_path){
+                            let _Obj = new Application.System.MarkerScript(view_path,req,res);
+                            return _Obj
+                        }
+
+                        //begin
                         let SomeError = false;
 
                         //apply middlewares
@@ -96,7 +104,7 @@ module.exports = {
                             }
                         }
                         //apply main route code
-                        var template = 'default';
+                        let template = 'default';
                         if (typeof route.template != 'undefined')
                             template = route.template;
 
@@ -104,8 +112,8 @@ module.exports = {
                             'X-Powered-By': 'Sukina Framework'
                         });
                         //set Default Controller and action to Application.Controller.default.index
-                        var controller = 'default';
-                        var action = 'index';
+                        let controller = 'default';
+                        let action = 'index';
 
                         if (typeof route.controller != 'undefined')
                             controller = route.controller;
@@ -134,8 +142,8 @@ module.exports = {
                         let Template_before = async function (req, res, result) {
                             return result;
                         };
-                        if (typeof Application.module.ObjSelector(Application.Controller, "Template")._before != "undefined") {
-                            Template_before = Application.module.ObjSelector(Application.Controller, "Template")._before;
+                        if (typeof Application.System.ObjSelector(Application.Controller, "Template")._before != "undefined") {
+                            Template_before = Application.System.ObjSelector(Application.Controller, "Template")._before;
                         }
 
                         try {
@@ -149,8 +157,8 @@ module.exports = {
                         let Controller_before = async function (req, res, result) {
                             return result;
                         };
-                        if (typeof Application.module.ObjSelector(Application.Controller, controller)._before != "undefined") {
-                            Controller_before = Application.module.ObjSelector(Application.Controller, controller)._before;
+                        if (typeof Application.System.ObjSelector(Application.Controller, controller)._before != "undefined") {
+                            Controller_before = Application.System.ObjSelector(Application.Controller, controller)._before;
                         }
                         try {
                             result = await Controller_before(req, res, result);
@@ -161,7 +169,7 @@ module.exports = {
 
                         //3
                         try {
-                            let Controller_Action = Application.module.ObjSelector(Application.Controller, controller)[action];
+                            let Controller_Action = Application.System.ObjSelector(Application.Controller, controller)[action];
                             result = await Controller_Action(req, res, result);
                         } catch (e) {
                             //found error on controller stage
@@ -172,8 +180,8 @@ module.exports = {
                         let Controller_after = async function (req, res, result) {
                             return result;
                         };
-                        if (typeof Application.module.ObjSelector(Application.Controller, controller)._after != "undefined") {
-                            Controller_after = Application.module.ObjSelector(Application.Controller, controller)._after;
+                        if (typeof Application.System.ObjSelector(Application.Controller, controller)._after != "undefined") {
+                            Controller_after = Application.System.ObjSelector(Application.Controller, controller)._after;
                         }
                         try {
                             result = await Controller_after(req, res, result);
@@ -186,8 +194,8 @@ module.exports = {
                         let Template_Action = async function (req, res, result) {
                             return result;
                         };
-                        if (typeof Application.module.ObjSelector(Application.Controller, "Template")[template] != "undefined") {
-                            Template_Action = Application.module.ObjSelector(Application.Controller, "Template")[template];
+                        if (typeof Application.System.ObjSelector(Application.Controller, "Template")[template] != "undefined") {
+                            Template_Action = Application.System.ObjSelector(Application.Controller, "Template")[template];
                         }
                         try {
                             result = await Template_Action(req, res, result);
@@ -199,8 +207,8 @@ module.exports = {
                         let Template_after = async function (req, res, result) {
                             return result;
                         };
-                        if (typeof Application.module.ObjSelector(Application.Controller, "Template")._after != "undefined") {
-                            Template_after = Application.module.ObjSelector(Application.Controller, "Template")._after;
+                        if (typeof Application.System.ObjSelector(Application.Controller, "Template")._after != "undefined") {
+                            Template_after = Application.System.ObjSelector(Application.Controller, "Template")._after;
                         }
                         try {
                             result = await Template_after(req, res, result);
@@ -211,22 +219,22 @@ module.exports = {
 
                         if (!SomeError) { //all ok
                             if (!res.headersSent) res.send(result);
-                            Application.module.SrvLogger.access(req);
+                            Application.System.SrvLogger.access(req);
                         } else { //errors found
-                            Application.module.SrvLogger.error(req, SomeError);
+                            Application.System.SrvLogger.error(req, SomeError);
 
                             let Template_Error = async function (req, res, result) {
                                 return result;
                             };
-                            if (typeof Application.module.ObjSelector(Application.Controller, "Template").error != "undefined") {
-                                Template_Error = Application.module.ObjSelector(Application.Controller, "Template").error;
+                            if (typeof Application.System.ObjSelector(Application.Controller, "Template").error != "undefined") {
+                                Template_Error = Application.System.ObjSelector(Application.Controller, "Template").error;
                             }
                             try {
                                 result = await Template_Error(req, res, SomeError);
                             } catch (e) {
                                 //found error on Template.error stage
                                 SomeError = e;
-                                Application.module.SrvLogger.error(req, SomeError);
+                                Application.System.SrvLogger.error(req, SomeError);
                                 if (!res.headersSent) res.send(SomeError);
                             } finally {
                                 if (!res.headersSent) res.send(result);

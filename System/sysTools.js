@@ -8,26 +8,24 @@ module.exports = function () {
     };
 
     global.striptags = function (string) {
-        var regex = /(<([^>]+)>)/ig;
+        let regex = /(<([^>]+)>)/ig;
         return string.replace(regex, "");
     };
 
-    global.trim = function(string){
+    global.trim = function (string) {
         let result = ""
-        if(typeof string != "undefined") result = string.toString().trim();
+        if (typeof string != "undefined") result = string.toString().trim();
         return result
     }
 
-    global.explode = function(divider,string){
+    global.explode = function (divider, string) {
         let result = []
-        if(typeof string != "undefined") result = string.toString().split(divider);
+        if (typeof string != "undefined") result = string.toString().split(divider);
         return result
     }
 
     global.base64_encode = function (str) {
-
         return new Buffer.from(str).toString('base64');
-
     };
 
     global.base64_decode = function (str) {
@@ -37,25 +35,31 @@ module.exports = function () {
     global.md5 = function (str, as_bin = false) {
 
         function M(d) {
-            for (var _, m = "0123456789ABCDEF", f = "", r = 0; r < d.length; r++) _ = d.charCodeAt(r), f += m.charAt(_ >>> 4 & 15) + m.charAt(15 & _);
+            let _, m = "0123456789ABCDEF", f = "";
+            for (let r = 0; r < d.length; r++) {
+                _ = d.charCodeAt(r), f += m.charAt(_ >>> 4 & 15) + m.charAt(15 & _);
+            }
             return f
         }
 
         function X(d) {
-            for (var _ = Array(d.length >> 2), m = 0; m < _.length; m++) _[m] = 0;
+            let _= Array(d.length >> 2);
+            for (let m = 0; m < _.length; m++) _[m] = 0;
             for (m = 0; m < 8 * d.length; m += 8) _[m >> 5] |= (255 & d.charCodeAt(m / 8)) << m % 32;
             return _
         }
 
         function V(d) {
-            for (var _ = "", m = 0; m < 32 * d.length; m += 8) _ += String.fromCharCode(d[m >> 5] >>> m % 32 & 255);
+            let _ = "";
+            for (let m = 0; m < 32 * d.length; m += 8) _ += String.fromCharCode(d[m >> 5] >>> m % 32 & 255);
             return _
         }
 
         function Y(d, _) {
             d[_ >> 5] |= 128 << _ % 32, d[14 + (_ + 64 >>> 9 << 4)] = _;
-            for (var m = 1732584193, f = -271733879, r = -1732584194, i = 271733878, n = 0; n < d.length; n += 16) {
-                var h = m,
+            let m = 1732584193, f = -271733879, r = -1732584194, i = 271733878;
+            for (let n = 0; n < d.length; n += 16) {
+                let h = m,
                     t = f,
                     g = r,
                     e = i;
@@ -101,8 +105,8 @@ module.exports = function () {
                     hexString = (hexString + '').replace(/[^a-f0-9]/gi, '');
                     return parseInt(hexString, 16);
                 };
-                var bin = '';
-                for (var i = 0; i < hexSource.length; i = i + 2) {
+                let bin = '';
+                for (let i = 0; i < hexSource.length; i = i + 2) {
                     bin += String.fromCharCode(hexdec(hexSource.substr(i, 2)));
                 }
                 return bin;
@@ -116,79 +120,95 @@ module.exports = function () {
 
     };
 
-    global.empty = function (a) { //TODO make to real work
-        var exists = false;
-        if (typeof (a) == 'undefined') {} else {
-            exists = true;
-        }
-        var result = !exists;
-        if (exists) {
-            if (a) {
-                result = false;
-            }
-        }
-        return result;
-    };
+    global.usort = function (inputArr, sorter) {
 
-    global.usort = function(inputArr, sorter) {
-      
-        var valArr = []
-        var k = ''
-        var i = 0
-        var sortByReference = false
-        var populateArr = {}
-      
+        let valArr = []
+        let k = ''
+        let i = 0
+        let sortByReference = false
+        let populateArr = {}
+
         if (typeof sorter === 'string') {
-          sorter = this[sorter]
+            sorter = this[sorter]
         } else if (Object.prototype.toString.call(sorter) === '[object Array]') {
-          sorter = this[sorter[0]][sorter[1]]
+            sorter = this[sorter[0]][sorter[1]]
         }
-      
-        var iniVal = 'on'
+
+        let iniVal = 'on'
         sortByReference = iniVal === 'on'
         populateArr = sortByReference ? inputArr : populateArr
-      
+
         for (k in inputArr) {
-          // Get key and value arrays
-          if (inputArr.hasOwnProperty(k)) {
-            valArr.push(inputArr[k])
-            if (sortByReference) {
-              delete inputArr[k]
+            // Get key and value arrays
+            if (inputArr.hasOwnProperty(k)) {
+                valArr.push(inputArr[k])
+                if (sortByReference) {
+                    delete inputArr[k]
+                }
             }
-          }
         }
         try {
-          valArr.sort(sorter)
+            valArr.sort(sorter)
         } catch (e) {
-          return false
+            return false
         }
         for (i = 0; i < valArr.length; i++) {
-          // Repopulate the old array
-          populateArr[i] = valArr[i]
+            // Repopulate the old array
+            populateArr[i] = valArr[i]
         }
-      
+
         return sortByReference || populateArr
-      }
+    }
 
-      
-    //add some useful functions from smalltalk
-    Boolean.prototype.ifTrue = function (procedure) {
-        if (this == true) procedure();
-        return this;
+    //for data post-parse
+    global.toRuDateString = function (d) {
+        var date = ("0" + d.getDate()).slice(-2) + "." + ("0" + (d.getMonth() + 1)).slice(-2) + "." + d.getFullYear();
+        return date;
     };
-    Boolean.prototype.ifFalse = function (procedure) {
-        if (this == false) procedure();
-        return this;
+    global.toRuTimeString = function (d) {
+        var time = d.getHours() + ":" + ("0" + d.getMinutes(2)).slice(-2) + ":" + ("0" + d.getSeconds(2)).slice(-2);
+        return time;
     };
-    Number.prototype.between = function (min) {
-        var check = {
-            value: this,
-            min: min,
-            and: function (max) {
-                return ((this.value - this.min) * (this.value - max) <= 0);
+    global.toRuDateTimeString = function (d) {
+        var date = ("0" + d.getDate()).slice(-2) + "." + ("0" + (d.getMonth() + 1)).slice(-2) + "." + d.getFullYear();
+        var time = d.getHours() + ":" + ("0" + d.getMinutes(2)).slice(-2);
+        return time + ' ' + date;
+    };
+    global.list2tree = function (list) {
+        let map = {},
+            node, roots = [],
+            i;
+        for (i = 0; i < list.length; i++) {
+            map[list[i].id] = i; // initialize the map
+            list[i].children = []; // initialize the children
+        }
+        for (i = 0; i < list.length; i++) {
+            node = list[i];
+            if (node.parent_id != 0) {
+                // if you have dangling branches check that map[node.parentId] exists
+                if (list[map[node.parent_id]]) {
+                    list[map[node.parent_id]].children.push(node);
+                }
+            } else {
+                roots.push(node);
             }
-        };
-
-        return check;
+        }
+        return roots;
+    }
+    global.tree2list = function (tree) {
+        let list = {};
+        for (let key in tree) {
+            switch (typeof tree[key]) {
+                case 'object': {
+                    let subtree = tree2list(tree[key]);
+                    for (let i in subtree) list[key + '.' + i] = subtree[i];
+                    break;
+                }
+                default: {
+                    list[key] = tree[key];
+                }
+            }
+        }
+        return list;
     };
 };

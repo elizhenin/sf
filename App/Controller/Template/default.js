@@ -5,5 +5,5 @@ module.exports = async function (req, res, result) {
     //and then put other data
     View_Template.data(result);
 
-    return View_Template.render();
+    return await View_Template.render();
 }

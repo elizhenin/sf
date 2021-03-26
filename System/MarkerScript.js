@@ -1,6 +1,6 @@
 // View parse with small scripting support
 
-module.exports = function MarkerScript(view_name = null) {
+module.exports = function MarkerScript(view_name = null, req = null, res = null) {
     // marker brackets:
     this.markerBefore = '{{';
     this.markerAfter = '}}';
@@ -46,7 +46,7 @@ module.exports = function MarkerScript(view_name = null) {
     //for object
     if (view_name) {
         try {
-            this.html = Application.module.ObjSelector(Application.View, view_name);
+            this.html = Application.System.ObjSelector(Application.View, view_name);
             this._aggregateMarkers();
         } catch (e) {
             throw new Error('View "' + view_name + '" not found')
@@ -77,8 +77,7 @@ module.exports = function MarkerScript(view_name = null) {
 
 
     //apply replacement
-    this.parse = function () {
-
+    this.parse = async function () {
         function BeforeMarker(html, marker) {
             var beginPos = 0;
             var endPos = html.indexOf(marker);
@@ -99,7 +98,9 @@ module.exports = function MarkerScript(view_name = null) {
         }
 
         try {
-            this.markers.forEach(key => {
+            for(let markers_index in this.markers){
+                let key = this.markers[markers_index]
+
                 if (key.indexOf(' ') > -1) {
                     //command found
                     var command = key.split(' ');
@@ -186,7 +187,7 @@ module.exports = function MarkerScript(view_name = null) {
                                     let View_Block = new MarkerScript();
                                     View_Block.factory(CycleBlock);
                                     View_Block.data(this._data[command[1]][key]);
-                                    block_list += View_Block.value();
+                                    block_list += await View_Block.value();
                                 }
                                 this.html = BeforeBlock + block_list + AfterBlock;
                             }
@@ -212,7 +213,7 @@ module.exports = function MarkerScript(view_name = null) {
                                 let View_Block = new MarkerScript();
                                 View_Block.factory(CycleBlock);
                                 View_Block.data(this._data[command[1]]);
-                                this.html = BeforeBlock + View_Block.value() + AfterBlock;
+                                this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                             }
 
                             break;
@@ -244,7 +245,7 @@ module.exports = function MarkerScript(view_name = null) {
                                 }
                                 view_path = view_path.join('.');
                                 let view_exist = true;
-                                if (!Application.module.ObjSelector(Application.View, view_path)) {
+                                if (!Application.System.ObjSelector(Application.View, view_path)) {
                                     view_exist = false;
                                 }
 
@@ -252,7 +253,7 @@ module.exports = function MarkerScript(view_name = null) {
                                 if (view_exist) {
                                     let View_Block = new MarkerScript(view_path);
                                     View_Block.data(this._data);
-                                    this.html = BeforeBlock + View_Block.value() + AfterBlock;
+                                    this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                                 } else {
                                     ErrorCatcher('Error: View ' + view_path + ' not found')
                                 }
@@ -261,9 +262,34 @@ module.exports = function MarkerScript(view_name = null) {
 
                             break;
                         }
+                        case 'widget': {
+                            //execute async function and put result in place
+                            /*
+                            Syntax:
+                            include Application.Library.SomeFunc
+                            ^^ means "await Application.Library.SomeFunc(this._data)"
+                            */
+                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
+                            var AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
+                            if (typeof command[1] != "undefined") {
+                               
+                                let code_path = command[1];
+                                let code_exist = true;
+                                if (!Application.System.ObjSelector(global, code_path)) {
+                                    code_exist = false;
+                                }
 
+                                if (code_exist) {
+                                    let New_Block = Application.System.ObjSelector(global, code_path);
+                                    this.html = BeforeBlock + await New_Block(req,res,this._data) + AfterBlock;
+                                } else {
+                                    ErrorCatcher('Error: Function ' + code_path + '() not found')
+                                }
+                            }
+
+                            break;
+                        }
                         default: {
-
                         }
                     }
 
@@ -276,13 +302,13 @@ module.exports = function MarkerScript(view_name = null) {
                         ErrorCatcher(e);
                     }
                 }
-            });
+            }
         } catch (e) {}
         return this;
     };
     //apply replacement, clear unused markers and return current resulting text
-    this.render = function () {
-        this.parse();
+    this.render = async function () {
+        await this.parse();
 
         this._aggregateMarkers();
         try {
@@ -294,8 +320,8 @@ module.exports = function MarkerScript(view_name = null) {
     };
 
     //apply replacement and return current resulting text
-    this.value = function () {
-        this.parse();
+    this.value = async function () {
+        await this.parse();
         this._aggregateMarkers();
         return this.html;
     };
