@@ -149,7 +149,7 @@ module.exports = {
 
                         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
                             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
-                            _Controller = new _Controller(req, res, result,controller,action.req_View);
+                            _Controller = new _Controller(req, res, result,controller,action,req_View);
                             //2
                             try {
                                 result = await _Controller._before();
