@@ -83,9 +83,9 @@ module.exports = {
                     Application.Routes[subdomain][method](route.uri, async function (req, res) {
 
                         //define context-specific View() function
-                        
-                        req.View = function(view_path){
-                            let _Obj = new Application.System.MarkerScript(view_path,req,res);
+
+                        let req_View = function (view_path) {
+                            let _Obj = new Application.System.MarkerScript(view_path, req, res);
                             return _Obj
                         }
 
@@ -139,98 +139,72 @@ module.exports = {
 
                         let result = {};
                         //1
-                        let Template_before = async function (req, res, result) {
-                            return result;
-                        };
-                        if (typeof Application.System.ObjSelector(Application.Controller, "Template")._before != "undefined") {
-                            Template_before = Application.System.ObjSelector(Application.Controller, "Template")._before;
-                        }
-
+                        let _Controller_Template = new Application.Controller.Template(req, res, result);
+                        _Controller_Template.View = req_View;
                         try {
-                            result = await Template_before(req, res, result);
+                            result = await _Controller_Template._before();
                         } catch (e) {
                             //found error on template._before stage
                             SomeError = e;
                         }
 
-                        //2
-                        let Controller_before = async function (req, res, result) {
-                            return result;
-                        };
-                        if (typeof Application.System.ObjSelector(Application.Controller, controller)._before != "undefined") {
-                            Controller_before = Application.System.ObjSelector(Application.Controller, controller)._before;
-                        }
-                        try {
-                            result = await Controller_before(req, res, result);
-                        } catch (e) {
-                            //found error on controller._before stage
-                            SomeError = e;
-                        }
-
-                        //3
-                        try {
-                            let Controller_Action = Application.System.ObjSelector(Application.Controller, controller)[action];
-                            result = await Controller_Action(req, res, result);
-                        } catch (e) {
-                            //found error on controller stage
-                            SomeError = "Application.Controller." + controller + "." + action + "() causes problem " + " [" + e + "]";
-                        }
-
-                        //4
-                        let Controller_after = async function (req, res, result) {
-                            return result;
-                        };
-                        if (typeof Application.System.ObjSelector(Application.Controller, controller)._after != "undefined") {
-                            Controller_after = Application.System.ObjSelector(Application.Controller, controller)._after;
-                        }
-                        try {
-                            result = await Controller_after(req, res, result);
-                        } catch (e) {
-                            //found error on controller._after stage
-                            SomeError = e;
+                        if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
+                            let _Controller = Application.System.ObjSelector(Application.Controller, controller);
+                            _Controller = new _Controller(req, res, result);
+                            _Controller.View = req_View;
+                            //2
+                            try {
+                                result = await _Controller._before();
+                            } catch (e) {
+                                //found error on controller._before stage
+                                SomeError = e;
+                            }
+                            //3
+                            try {
+                                result = await _Controller['action_' + action]();
+                            } catch (e) {
+                                //found error on controller.action stage
+                                SomeError = "Application.Controller." + controller + "." + action + "() causes problem " + " [" + e + "]";
+                            }
+                            //4
+                            try {
+                                result = await _Controller._after();
+                            } catch (e) {
+                                //found error on controller._before stage
+                                SomeError = e;
+                            }
                         }
 
                         //5
-                        let Template_Action = async function (req, res, result) {
-                            return result;
-                        };
-                        if (typeof Application.System.ObjSelector(Application.Controller, "Template")[template] != "undefined") {
-                            Template_Action = Application.System.ObjSelector(Application.Controller, "Template")[template];
+                        if (typeof _Controller_Template[template] != "undefined") {
+                            try {
+                                result = _Controller_Template.result = await _Controller_Template[template]();
+                            } catch (e) {
+                                //found error on controller stage
+                                SomeError = "Application.Controller.Template." + template + "() causes problem " + " [" + e + "]";
+                            }
                         }
-                        try {
-                            result = await Template_Action(req, res, result);
-                        } catch (e) {
-                            //found error on controller stage
-                            SomeError = "Application.Controller.Template." + template + "() causes problem " + " [" + e + "]";
-                        }
+
                         //6
-                        let Template_after = async function (req, res, result) {
-                            return result;
-                        };
-                        if (typeof Application.System.ObjSelector(Application.Controller, "Template")._after != "undefined") {
-                            Template_after = Application.System.ObjSelector(Application.Controller, "Template")._after;
-                        }
                         try {
-                            result = await Template_after(req, res, result);
+                            result = await _Controller_Template._after();
                         } catch (e) {
                             //found error on template._after stage
                             SomeError = e;
                         }
-
                         if (!SomeError) { //all ok
                             if (!res.headersSent) res.send(result);
                             Application.System.SrvLogger.access(req);
                         } else { //errors found
                             Application.System.SrvLogger.error(req, SomeError);
-
                             let Template_Error = async function (req, res, result) {
                                 return result;
                             };
-                            if (typeof Application.System.ObjSelector(Application.Controller, "Template").error != "undefined") {
+                            if (typeof _Controller_Template.error != "undefined") {
                                 Template_Error = Application.System.ObjSelector(Application.Controller, "Template").error;
                             }
                             try {
-                                result = await Template_Error(req, res, SomeError);
+                                result = await _Controller_Template.error(SomeError);
                             } catch (e) {
                                 //found error on Template.error stage
                                 SomeError = e;
