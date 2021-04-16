@@ -96,7 +96,7 @@
         //some useful functions
         Application.System.sysTools();
 
-        //call AppLoader to load other MVC code 
+        //call AppLoader to load other MVC code
         Application.System.AppLoader(Application);
         //call ProjectLoader to load project from container file
         // Application.System.ProjectLoader();
@@ -107,7 +107,7 @@
 
         //set up databases
         Application.DB = {};
-        for (var key in Application.database) {
+        for (let key in Application.database) {
             Application.DB[key] = require('knex')(Application.database[key]);
         }
 

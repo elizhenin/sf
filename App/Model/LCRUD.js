@@ -41,7 +41,24 @@ module.exports = class extends Application.Model.$SF {
         if (filter && typeof filter == typeof []) {
             for (let i in filter) {
                 let item = filter[i]
-                records = records.where(item.field, item.expression, item.value);
+                if (["string", "number"].indexOf(typeof item.value) > -1) records = records.where(item.field, item.expression, item.value);
+                if (typeof item.value == "object") {
+                    if (item.logic == 'AND') {
+                        for (let value_index in item.value) records = records.where(item.field, item.expression, item.value[value_index]);
+                    }
+                    if (item.logic == 'OR') {
+                        records = records.andWhere(function () {
+                            let count = 0;
+                            let op = '';
+                            for (let value_index in item.value) {
+                                if (count == 0) op = 'orWhere';
+                                else op = 'orWhere';
+                                this[op](item.field, item.expression, item.value[value_index])
+                                count = count + 1;
+                            }
+                        })
+                    }
+                }
             }
         }
         records = await records;
@@ -57,7 +74,9 @@ module.exports = class extends Application.Model.$SF {
     }
 
     async Delete(item_id) {
-        let $db = await this.DB().where("id", '=', item_id).del().into(this._selected_table);
+        let op = "=";
+        if (typeof item_id.length == "number") op = "IN";
+        let $db = await this.DB().where("id", op, item_id).del().into(this._selected_table);
         return $db;
     }
 

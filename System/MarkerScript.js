@@ -1,14 +1,31 @@
 // View parse with small scripting support
 
-module.exports = function MarkerScript(view_name = null, req = null, res = null) {
-    // marker brackets:
-    this.markerBefore = '{{';
-    this.markerAfter = '}}';
-    // content of this View:
-    this.html = '';
-    this.markers = {};
+module.exports = class MarkerScript {
 
-    this._aggregateMarkers = function () {
+    constructor(view_name = null, req = null, res = null) {
+        // marker brackets:
+        this.markerBefore = '{{';
+        this.markerAfter = '}}';
+        // content of this View:
+        this.html = '';
+        this.markers = {};
+        //for object
+        if (view_name) {
+            try {
+                this.html = Application.System.ObjSelector(Application.View, view_name);
+                this._aggregateMarkers();
+            } catch (e) {
+                throw new Error('View "' + view_name + '" not found')
+            }
+        }
+
+        // key = value for replacement
+        this._data = {};
+
+        this.req = req;this.res = res;
+    }
+
+    _aggregateMarkers() {
         var pattern = new RegExp('(' + this.markerBefore + ')(.+?)(' + this.markerAfter + ')', 'g');
         this.markers = this.html.match(pattern);
         try {
@@ -43,42 +60,28 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
         } catch (e) {}
     };
 
-    //for object
-    if (view_name) {
-        try {
-            this.html = Application.System.ObjSelector(Application.View, view_name);
-            this._aggregateMarkers();
-        } catch (e) {
-            throw new Error('View "' + view_name + '" not found')
-        }
-    }
-
-
     //from variable
-    this.factory = function (html) {
+    factory(html) {
         this.html = html;
         this._aggregateMarkers();
     };
 
-
-    // key = value for replacement
-    this._data = {};
-
     // save one pair marker=content in data
-    this.apply = function (marker, content) {
+    apply(marker, content) {
         this._data[marker] = content;
         return this;
     };
     // add array of pairs marker=content to data 
-    this.data = function (datapack) {
+    data(datapack) {
         this._data = Object.assign(this._data, datapack);
         return this;
     };
 
 
     //apply replacement
-    this.parse = async function () {
-        function BeforeMarker(html, marker) {
+    async parse() {
+
+        let BeforeMarker = function (html, marker) {
             var beginPos = 0;
             var endPos = html.indexOf(marker);
             var result = html;
@@ -88,7 +91,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
             return result;
         }
 
-        function AfterMarker(html, marker) {
+        let AfterMarker = function (html, marker) {
             var beginPos = html.indexOf(marker);
             var result = '';
             if (beginPos > -1) {
@@ -98,7 +101,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
         }
 
         try {
-            for(let markers_index in this.markers){
+            for (let markers_index in this.markers) {
                 let key = this.markers[markers_index]
 
                 if (key.indexOf(' ') > -1) {
@@ -184,7 +187,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
 
                                 var block_list = '';
                                 for (let key in this._data[command[1]]) {
-                                    let View_Block = new MarkerScript();
+                                    let View_Block = new MarkerScript(null,this.req,this.res);
                                     View_Block.factory(CycleBlock);
                                     View_Block.data(this._data[command[1]][key]);
                                     block_list += await View_Block.value();
@@ -210,7 +213,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
 
                             if (typeof this._data[command[1]] != "undefined") {
-                                let View_Block = new MarkerScript();
+                                let View_Block = new MarkerScript(null,this.req,this.res);
                                 View_Block.factory(CycleBlock);
                                 View_Block.data(this._data[command[1]]);
                                 this.html = BeforeBlock + await View_Block.value() + AfterBlock;
@@ -251,7 +254,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
 
 
                                 if (view_exist) {
-                                    let View_Block = new MarkerScript(view_path);
+                                    let View_Block = new MarkerScript(view_path,this.req,this.res);
                                     View_Block.data(this._data);
                                     this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                                 } else {
@@ -262,6 +265,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
 
                             break;
                         }
+
                         case 'widget': {
                             //execute async function and put result in place
                             /*
@@ -272,7 +276,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
                             if (typeof command[1] != "undefined") {
-                               
+
                                 let code_path = command[1];
                                 let code_exist = true;
                                 if (!Application.System.ObjSelector(global, code_path)) {
@@ -281,7 +285,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
 
                                 if (code_exist) {
                                     let New_Block = Application.System.ObjSelector(global, code_path);
-                                    this.html = BeforeBlock + await New_Block(req,res,this._data) + AfterBlock;
+                                    this.html = BeforeBlock + await New_Block(this.req, this.res, this._data) + AfterBlock;
                                 } else {
                                     ErrorCatcher('Error: Function ' + code_path + '() not found')
                                 }
@@ -289,8 +293,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
 
                             break;
                         }
-                        default: {
-                        }
+                        default: {}
                     }
 
                 } else {
@@ -306,8 +309,9 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
         } catch (e) {}
         return this;
     };
+
     //apply replacement, clear unused markers and return current resulting text
-    this.render = async function () {
+    async render() {
         await this.parse();
 
         this._aggregateMarkers();
@@ -320,7 +324,7 @@ module.exports = function MarkerScript(view_name = null, req = null, res = null)
     };
 
     //apply replacement and return current resulting text
-    this.value = async function () {
+    async value() {
         await this.parse();
         this._aggregateMarkers();
         return this.html;
