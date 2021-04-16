@@ -139,8 +139,7 @@ module.exports = {
 
                         let result = {};
                         //1
-                        let _Controller_Template = new Application.Controller.Template(req, res, result);
-                        _Controller_Template.View = req_View;
+                        let _Controller_Template = new Application.Controller.Template(req, res, result,controller,action,req_View);
                         try {
                             result = await _Controller_Template._before();
                         } catch (e) {
@@ -150,8 +149,7 @@ module.exports = {
 
                         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
                             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
-                            _Controller = new _Controller(req, res, result);
-                            _Controller.View = req_View;
+                            _Controller = new _Controller(req, res, result,controller,action.req_View);
                             //2
                             try {
                                 result = await _Controller._before();
@@ -201,10 +199,10 @@ module.exports = {
                                 return result;
                             };
                             if (typeof _Controller_Template.error != "undefined") {
-                                Template_Error = Application.System.ObjSelector(Application.Controller, "Template").error;
+                                Template_Error = _Controller_Template.error;
                             }
                             try {
-                                result = await _Controller_Template.error(SomeError);
+                                result = await Template_Error(SomeError);
                             } catch (e) {
                                 //found error on Template.error stage
                                 SomeError = e;
