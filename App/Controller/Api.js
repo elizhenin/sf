@@ -1,4 +1,4 @@
-module.exports = class extends Application.Controller.$SF {
+module.exports = class extends Application.System.Controller {
     async _before() {
         //CORS access from any:
         this.res.header('Access-Control-Allow-Origin', '*');

@@ -13,7 +13,7 @@ await LCRUD.With("tablename")
 await LCRUD.<Operation>()
 */
 
-module.exports = class extends Application.Model.$SF {
+module.exports = class extends Application.System.Model {
  
     async With(table) {
         this._selected_table = table;

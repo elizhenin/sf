@@ -138,18 +138,36 @@ module.exports = {
                         */
 
                         let result = {};
+
+                        /*
+                        If only template action set in route, use default controller Template. Else search for Controller and use it
+                        */
+                        let _Controller_Template = template.split('.');
+                        if (_Controller_Template.length > 1) {
+                            _Controller_Template = _Controller_Template.slice(0, -1).join('.');
+                            if (typeof Application.System.ObjSelector(Application.Controller, _Controller_Template) != "undefined") {
+                                _Controller_Template = Application.System.ObjSelector(Application.Controller, _Controller_Template);
+                                _Controller_Template = new _Controller_Template(req, res, result, controller, action, req_View);
+                            }
+                        }else _Controller_Template = false;
+                        if (typeof _Controller_Template != "object") {
+                            _Controller_Template = new Application.Controller.Template(req, res, result, controller, action, req_View);
+                        }
                         //1
-                        let _Controller_Template = new Application.Controller.Template(req, res, result,controller,action,req_View);
+
+
                         try {
                             result = await _Controller_Template._before();
                         } catch (e) {
                             //found error on template._before stage
                             SomeError = e;
                         }
-
+                        /*
+                        use Controller if it exists
+                        */
                         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
                             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
-                            _Controller = new _Controller(req, res, result,controller,action,req_View);
+                            _Controller = new _Controller(req, res, result, controller, action, req_View);
                             //2
                             try {
                                 result = await _Controller._before();

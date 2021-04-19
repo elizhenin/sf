@@ -1,4 +1,4 @@
-module.exports = class extends Application.Controller.$SF {
+module.exports = class extends Application.System.Controller {
     async notemplate() {
         return this.result;
     }
