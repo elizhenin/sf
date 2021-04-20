@@ -47,7 +47,7 @@
 
     //load config from ini
     Application._ConfigLoader = function (branch, filename) {
-        let iniParser = require(Application.lib.path.join(Application.config.Directories.System,'IniParser.js'));
+        let iniParser = require(Application.lib.path.join(Application.config.Directories.System, 'IniParser.js'));
         var config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
         branch = Object.assign(branch, iniParser(config_text));
         config_text = undefined;
@@ -77,14 +77,13 @@
     } else { // worker process
 
         //popularize with system modules in System branch
-        Application.System = {};
-        {
+        Application.System = {}; {
             let dir_list = Application.lib.fs.readdirSync(Application.config.Directories.System)
-            for(let i in dir_list){
+            for (let i in dir_list) {
                 let item = dir_list[i];
                 let ObjName = item.slice(0, -3); //remove ".js" symbols from end
-                    //add this js to namespace
-                    Application.System[ObjName] = require(Application.lib.path.join(Application.config.Directories.System, item));
+                //add this js to namespace
+                Application.System[ObjName] = require(Application.lib.path.join(Application.config.Directories.System, item));
             }
         }
 
@@ -97,6 +96,7 @@
         Application.System.sysTools();
 
         //call AppLoader to load other MVC code
+        Application._appReady = true;
         Application.System.AppLoader(Application);
         //call ProjectLoader to load project from container file
         // Application.System.ProjectLoader();
@@ -104,40 +104,44 @@
         if (typeof Application.config.PublicBuilder != "undefined" && Application.config.PublicBuilder.Enable == 'true') {
             await Application.System.PublicBuilder();
         }
+        let _continueInit = function () {
+            if (Application._appReady) {
+                //set up databases
+                Application.DB = {};
+                for (let key in Application.database) {
+                    Application.DB[key] = require('knex')(Application.database[key]);
+                }
 
-        //set up databases
-        Application.DB = {};
-        for (let key in Application.database) {
-            Application.DB[key] = require('knex')(Application.database[key]);
+                //set up server express
+                Application.HTTP = new Application.lib.express();
+                Application.HTTP.setMaxListeners(Application.config.Server.MaxListeners * 1);
+
+                //cookie parser
+                Application.HTTP.use(Application.lib['cookie-parser']());
+
+                //static files
+                Application.HTTP.use(Application.lib.express.static(Application.config.Directories.AppPublic));
+
+                //body parser 
+                Application.HTTP.use(Application.lib['body-parser'].json({
+                    limit: '100mb'
+                }));
+                // to support JSON-encoded bodies
+                Application.HTTP.use(Application.lib['body-parser'].urlencoded({
+                    extended: false
+                }));
+
+                //routes
+                Application.Routes = Application.System.Routes;
+                Application.Routes.init();
+                //start listening
+                Application.HTTP.listen(Application.config.Server.Port, function () {
+                    console.log("listen started on port " + Application.config.Server.Port);
+                    Application.Scheduler.init();
+                });
+            } else setTimeout(_continueInit, 100);
         }
-
-        //set up server express
-        Application.HTTP = new Application.lib.express();
-        Application.HTTP.setMaxListeners(Application.config.Server.MaxListeners * 1);
-
-        //cookie parser
-        Application.HTTP.use(Application.lib['cookie-parser']());
-
-        //static files
-        Application.HTTP.use(Application.lib.express.static(Application.config.Directories.AppPublic));
-
-        //body parser 
-        Application.HTTP.use(Application.lib['body-parser'].json({
-            limit: '100mb'
-        }));
-        // to support JSON-encoded bodies
-        Application.HTTP.use(Application.lib['body-parser'].urlencoded({
-            extended: false
-        }));
-
-        //routes
-        Application.Routes = require(Application.lib.path.join(Application.config.Directories.System, 'Routes.js'));
-        Application.Routes.init();
-        //start listening
-        Application.HTTP.listen(Application.config.Server.Port, function () {
-            console.log("listen started on port " + Application.config.Server.Port);
-            Application.Scheduler.init();
-        });
+        _continueInit();
     }
 
     //finish main code, do the work

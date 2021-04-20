@@ -15,7 +15,21 @@ module.exports = function (root) {
                 if (item.substr(item.length - 3) == '.js') {
                     let ObjName = item.slice(0, -3); //remove ".js" symbols from end
                     //add this js to namespace
-                    rootNode[ObjName] = require(Application.lib.path.join(Directory, item));
+                    let _init = function (firstTry = false) {
+                        let filename = Application.lib.path.join(Directory, item);
+                        try {
+                            rootNode[ObjName] = require(filename);
+                            if (!firstTry) {
+                                Application._appReady = true;
+                                console.log(filename + ' now ready')
+                            }
+                        } catch (e) {
+                            Application._appReady = false;
+                            console.log(`${filename} waiting retry [${e}]`)
+                            setTimeout(_init, 100)
+                        }
+                    }
+                    _init(true);
                 } else if (item.substr(item.length - 5) == '.html') {
                     let ObjName = item.slice(0, -5); //remove ".html" symbols from end
                     //add this html to namespace
