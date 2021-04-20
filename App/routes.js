@@ -8,23 +8,20 @@ module.exports = {
         name: 'Welcome',
         method: 'get',
         uri: '/',
-        controller: 'Welcome',
-        template: 'default'
+        controller: 'Welcome'
     },
     {
         name: 'Api requests',
         method: 'post',
         uri: '/api/:action?/:arg?',
         controller: 'Api',
-        action: 'noaction',
-        template: 'notemplate'
+        action: 'noaction'
     },
     {
         name:'Articles sample route',
         method:'get',
         uri:'/:controller/:action?', //as in Express.js
         action: 'index',//default action
-        template: 'default' //template is the action() in Template controller
     }
     ]
 };

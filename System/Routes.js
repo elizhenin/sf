@@ -129,55 +129,28 @@ module.exports = {
 
                         /*
                         Work procedure chain:
-                        1) Template._before
-                        2) Controller._before
-                        3) Controller.Action
-                        4) Controller._after
-                        5) Template.Action
-                        6) Template._after
+                        1) Controller._before
+                        2) Controller.Action
+                        3) Controller._afteк
                         */
 
-                        let result = {};
-
-                        /*
-                        If only template action set in route, use default controller Template. Else search for Controller and use it
-                        */
-                        let _Controller_Template = template.split('.');
-                        if (_Controller_Template.length > 1) {
-                            _Controller_Template = _Controller_Template.slice(0, -1).join('.');
-                            if (typeof Application.System.ObjSelector(Application.Controller, _Controller_Template) != "undefined") {
-                                _Controller_Template = Application.System.ObjSelector(Application.Controller, _Controller_Template);
-                                _Controller_Template = new _Controller_Template(req, res, result, controller, action, req_View);
-                            }
-                        }else _Controller_Template = false;
-                        if (typeof _Controller_Template != "object") {
-                            _Controller_Template = new Application.Controller.Template(req, res, result, controller, action, req_View);
-                        }
-                        //1
-
-
-                        try {
-                            result = await _Controller_Template._before();
-                        } catch (e) {
-                            //found error on template._before stage
-                            SomeError = e;
-                        }
                         /*
                         use Controller if it exists
                         */
+                        let result = false;
                         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
                             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
-                            _Controller = new _Controller(req, res, result, controller, action, req_View);
-                            //2
+                            _Controller = new _Controller(req, res, controller, action, req_View);
+                            //1
                             try {
-                                result = await _Controller._before();
+                                await _Controller._before();
                             } catch (e) {
                                 //found error on controller._before stage
-                                SomeError = e;
+                                SomeError ="Application.Controller." + controller + "._before() causes problem " + " [" + e + "]";
                             }
-                            //3
+                            //2
                             try {
-                                result = await _Controller['action_' + action]();
+                                await _Controller['action_' + action]();
                             } catch (e) {
                                 //found error on controller.action stage
                                 SomeError = "Application.Controller." + controller + "." + action + "() causes problem " + " [" + e + "]";
@@ -186,50 +159,18 @@ module.exports = {
                             try {
                                 result = await _Controller._after();
                             } catch (e) {
-                                //found error on controller._before stage
-                                SomeError = e;
+                                //found error on controller._after stage
+                                SomeError = "Application.Controller." + controller + "._after() causes problem " + " [" + e + "]";
                             }
                         }
-
-                        //5
-                        if (typeof _Controller_Template[template] != "undefined") {
-                            try {
-                                result = _Controller_Template.result = await _Controller_Template[template]();
-                            } catch (e) {
-                                //found error on controller stage
-                                SomeError = "Application.Controller.Template." + template + "() causes problem " + " [" + e + "]";
-                            }
-                        }
-
-                        //6
-                        try {
-                            result = await _Controller_Template._after();
-                        } catch (e) {
-                            //found error on template._after stage
-                            SomeError = e;
-                        }
+                        
                         if (!SomeError) { //all ok
                             if (!res.headersSent) res.send(result);
                             Application.System.SrvLogger.access(req);
                         } else { //errors found
+                            console.log(SomeError)
                             Application.System.SrvLogger.error(req, SomeError);
-                            let Template_Error = async function (req, res, result) {
-                                return result;
-                            };
-                            if (typeof _Controller_Template.error != "undefined") {
-                                Template_Error = _Controller_Template.error;
-                            }
-                            try {
-                                result = await Template_Error(SomeError);
-                            } catch (e) {
-                                //found error on Template.error stage
-                                SomeError = e;
-                                Application.System.SrvLogger.error(req, SomeError);
-                                if (!res.headersSent) res.send(SomeError);
-                            } finally {
-                                if (!res.headersSent) res.send(result);
-                            }
-
+                            res.send(SomeError);
                         }
 
                     }); //end HTTP.METHOD
