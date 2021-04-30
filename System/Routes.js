@@ -82,13 +82,6 @@ module.exports = {
 
                     Application.Routes[subdomain][method](route.uri, async function (req, res) {
 
-                        //define context-specific View() function
-
-                        let req_View = function (view_path) {
-                            let _Obj = new Application.System.MarkerScript(view_path, req, res);
-                            return _Obj
-                        }
-
                         //begin
                         let SomeError = false;
 
@@ -140,7 +133,7 @@ module.exports = {
                         let result = false;
                         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
                             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
-                            _Controller = new _Controller(req, res, controller, action, req_View);
+                            _Controller = new _Controller(req, res, controller, action);
                             //1
                             try {
                                 await _Controller._before();
