@@ -1,0 +1,14 @@
+Application.lib.path = require('path');
+    Application.lib.fs = require('fs');
+    Application.lib.fs_promises = require('fs').promises;
+    Application.lib.express = require('express');
+    Application.lib['body-parser'] = require('body-parser');
+    Application.lib['cookie-parser'] = require('cookie-parser');
+    Application.lib.nodemailer = require('nodemailer');
+    Application.lib.cluster = require('cluster');
+    Application.lib.request = require('request-promise');
+    Application.lib['sync-sqlite'] = require('sync-sqlite');
+    Application.lib.StrUnEscape = require('backslash');
+    Application.lib.sha1 = require('sha-1');
+    Application.lib.busboy = require("busboy");
+    Application.lib.cyrillicToTranslit = new require("cyrillic-to-translit-js")();
