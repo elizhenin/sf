@@ -120,8 +120,8 @@
                 }));
 
                 //routes
-                Application.Routes = Application.System.Routes;
-                Application.Routes.init();
+                new Application.System.Routes;
+                
                 //start listening
                 Application.HTTP.listen(Application.config.Server.Port, function () {
                     console.log("listen started on port " + Application.config.Server.Port);
