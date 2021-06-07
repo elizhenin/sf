@@ -156,10 +156,10 @@ module.exports = class {
             }
             //2
             try {
-                await _Controller['action_' + _Controller.action]();
+                await _Controller['action_' + _Controller._action]();
             } catch (e) {
                 //found error on controller.action stage
-                SomeError = "Application.Controller." + controller + "." + _Controller.action + "() causes problem " + " [" + e + "]";
+                SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
             }
             //4
             try {
