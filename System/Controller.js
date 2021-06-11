@@ -26,30 +26,18 @@ module.exports = class {
     async _after() {
         let clientMethods = [];
         let serverMethods = [];
-        let recursiveSearchMethods = function (node) {
-            let keys = Object.keys(node);
-            keys.forEach(function (key) {
-                if (typeof node[key] == 'function') {
-                    let tmp = new node[key]();
-                    let methods = Object.getOwnPropertyNames(tmp.__proto__);
-                    methods.forEach(function (method) {
-                        if (method.startsWith('client_')) {
-                            let methodF = eval(tmp[method]).toString().split('async client_').join('async function client_');
-                            clientMethods.push(methodF);
-                        }
-                        if (method.startsWith('server_')) {
-                            let methodF = `async function ${method}(){return await SF_servercall("${method.split('server_')[1]}",arguments)}`;
-                            serverMethods.push(methodF);
-                        }
-                    })
-                };
-                if (typeof node[key] == 'object') {
-                    recursiveSearchMethods(node[key])
-                }
-            });
-        }
-        // console.log(Object.getOwnPropertyNames(this.__proto__));
-        recursiveSearchMethods(Application.Controller);
+        let tmp = this;
+        let methods = Object.getOwnPropertyNames(tmp.__proto__);
+        methods.forEach(function (method) {
+            if (method.startsWith('client_')) {
+                let methodF = eval(tmp[method]).toString().split('async client_').join('async function client_');
+                clientMethods.push(methodF);
+            }
+            if (method.startsWith('server_')) {
+                let methodF = `async function ${method}(){return await SF_servercall("${method.split('server_')[1]}",arguments)}`;
+                serverMethods.push(methodF);
+            }
+        })
         // console.log(clientMethods)
         // console.log(serverMethods)
         let serverCode = `<script type="application/javascript">\n${serverMethods.join(';\n')}\n</script>`;
