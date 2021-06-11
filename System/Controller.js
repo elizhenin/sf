@@ -13,8 +13,7 @@ module.exports = class {
 
         //define session instance
         try {
-            Application.System.Session.middleware(req, res);
-            this.Session = new Application.System.Session.instance(this.req.cookies.Session);
+            this.Session = new Application.System.Session.instance(this.req.cookies[Application.System.Session._cookieName]);
         } catch (e) {}
 
     }
@@ -59,10 +58,10 @@ module.exports = class {
         let clientCode = `<script type="application/javascript">\n${clientMethods.join(';\n')}\n${onloadCode}\n</script>`;
         // console.log(serverCode)
         // console.log(clientCode)
-        let Session = new Application.System.Session.instance(this.req.cookies[Application.System.Session._cookieName]);
+        
         let apiToken = md5(+Date.now());
 
-        Session.set('sf-internal-api-token',apiToken);
+        this.Session.set('sf-internal-api-token',apiToken);
 
             let SF_servercall = async function(method,arg){
                 let  data = [];
