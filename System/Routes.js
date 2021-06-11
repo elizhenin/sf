@@ -14,7 +14,7 @@ module.exports = class {
                 case "object": {
                     if (Application.routes[subdomain].length > 0) {
                         Application.routes[subdomain].forEach(route => {
-                            //set Default Controller and action to Application.Controller.default.index
+                            //set Default Controller and action to Application.Controller.Default.index
                             let controller = 'Default';
                             let action = 'index';
 
@@ -31,8 +31,6 @@ module.exports = class {
                             Routes[subdomain][method](route.uri, async function (req, res) {
                                 await handler(req, res, controller, action) // return {result,error}
                             }); //end HTTP.METHOD
-
-
                         }); //end forEach;
 
 
@@ -45,7 +43,7 @@ module.exports = class {
                     if (Application.routes[subdomain].length > 0) {
                         Application.routes[subdomain] += ".";
                     }
-                    ['get','post'].forEach(function(method){
+                    ['get', 'post'].forEach(function (method) {
                         Routes[subdomain][method](/\/(.*)/, async function (req, res) {
                             //set Default Controller and action to Application.Controller.default.index
                             let controller = 'Default';
@@ -60,7 +58,7 @@ module.exports = class {
                                     action = objPath.pop();
                                 }
                             }
-    
+
                             controller = Application.routes[subdomain] + controller;
                             await handler(req, res, controller, action) // return {result,error}
                         }); //end HTTP.METHOD
@@ -144,6 +142,11 @@ module.exports = class {
         use Controller if it exists
         */
         let result = false;
+        let InternalAPIrequest = false;
+        if (req.headers['sf-internal-api-request'] == 'true') {
+            InternalAPIrequest = true;
+            action = req.headers['sf-internal-api-action'];
+        }
         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
             _Controller = new _Controller(req, res, controller, action);
@@ -154,22 +157,38 @@ module.exports = class {
                 //found error on controller._before stage
                 SomeError = "Application.Controller." + controller + "._before() causes problem " + " [" + e + "]";
             }
-            //2
-            try {
-                await _Controller['action_' + _Controller._action]();
-            } catch (e) {
-                //found error on controller.action stage
-                SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
+
+            if (InternalAPIrequest) {
+                //2
+                try {
+                    let arg = JSON.parse(decodeURI(req.query.arg));
+                    console.log(arg)
+                    result = {status:"success",result: await _Controller['server_' + _Controller._action](...arg)};
+
+                } catch (e) {
+                    //found error on controller.action stage
+                    SomeError = "Application.Controller." + controller + "." + _Controller._action+"() causes problem " + " [" + e + "]";
+                    result = {status:"error",message: SomeError};
+                }
+            } else {
+                //2
+                try {
+                    await _Controller['action_' + _Controller._action]();
+                } catch (e) {
+                    //found error on controller.action stage
+                    SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
+                }
+                //4
+                try {
+                    result = await _Controller._after();
+                } catch (e) {
+                    //found error on controller._after stage
+                    SomeError = "Application.Controller." + controller + "._after() causes problem " + " [" + e + "]";
+                }
             }
-            //4
-            try {
-                result = await _Controller._after();
-            } catch (e) {
-                //found error on controller._after stage
-                SomeError = "Application.Controller." + controller + "._after() causes problem " + " [" + e + "]";
-            }
-        }else {
-            SomeError = "Application.Controller." + controller+" is undefined";
+
+        } else {
+            SomeError = "Application.Controller." + controller + " is undefined";
         }
 
         if (!SomeError) { //all ok
@@ -182,4 +201,5 @@ module.exports = class {
         }
         return;
     }
+
 }

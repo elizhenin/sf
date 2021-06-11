@@ -12,9 +12,11 @@ module.exports = class {
             return new Application.System.MarkerScript(view_path, req, res);
         }
 
-         //define session instance
-        Application.System.Session.middleware(req, res);
-        this.Session = new Application.System.Session.instance(this.req.cookies.Session);
+        //define session instance
+        try {
+            Application.System.Session.middleware(req, res);
+            this.Session = new Application.System.Session.instance(this.req.cookies.Session);
+        } catch (e) {}
 
     }
     async _before() {
@@ -22,6 +24,79 @@ module.exports = class {
     }
 
     async _after() {
+        let clientMethods = [];
+        let serverMethods = [];
+        let recursiveSearchMethods = function (node) {
+            let keys = Object.keys(node);
+            keys.forEach(function (key) {
+                if (typeof node[key] == 'function') {
+                    let tmp = new node[key]();
+                    let methods = Object.getOwnPropertyNames(tmp.__proto__);
+                    methods.forEach(function (method) {
+                        if (method.startsWith('client_')) {
+                            let methodF = eval(tmp[method]).toString().split('async client_').join('async function client_');
+                            clientMethods.push(methodF);
+                        }
+                        if (method.startsWith('server_')) {
+                            let methodF = `async function ${method}(){return await SF_servercall("${method.split('server_')[1]}",arguments)}`;
+                            serverMethods.push(methodF);
+                        }
+                    })
+                };
+                if (typeof node[key] == 'object') {
+                    recursiveSearchMethods(node[key])
+                }
+            });
+        }
+        // console.log(Object.getOwnPropertyNames(this.__proto__));
+        recursiveSearchMethods(Application.Controller);
+        // console.log(clientMethods)
+        // console.log(serverMethods)
+        let serverCode = `<script type="application/javascript">\n${serverMethods.join(';\n')}\n</script>`;
+        let clientCode = `<script type="application/javascript">\n${clientMethods.join(';\n')}\n</script>`;
+        // console.log(serverCode)
+        // console.log(clientCode)
+            let SF_servercall = async function(method,arg){
+                let  data = [];
+                for (let i = 0; i < arg.length; i++)
+                    data.push(arg[i]);
+                data = JSON.stringify(data)
+                let P = new Promise(function (resolve, reject) {
+                    let xhr = new XMLHttpRequest();
+                    xhr.open('get', window.location.href.split('?')[0]+'?arg='+encodeURI(data));
+                    xhr.setRequestHeader('content-type', 'application/json');
+                    xhr.setRequestHeader('sf-internal-api-request','true');
+                    xhr.setRequestHeader('sf-internal-api-token','{{api-token}}');
+                    xhr.setRequestHeader('sf-internal-api-action',method);
+                    xhr.onload = function () {
+                        let response = JSON.parse(this.responseText);
+                        if (response.status == 'error') {
+                            reject(response.message)
+                        }
+                        if (response.status == 'success') {
+                            resolve(response.result);
+                        }
+                    };
+                    xhr.onerror = function (e) {
+                        console.log(e)
+                    };
+                    xhr.send();
+                })
+                return P;
+            }
+
+            let apiCallCode = 'window.SF_servercall = '+eval(SF_servercall).toString();
+            apiCallCode = `<script type="application/javascript">\n${apiCallCode}\n</script>`;
+        let {
+            JSDOM
+        } = Application.lib.jsdom;
+        try {
+            let document = new JSDOM(this.result);
+            this.result = document.serialize();
+            this.result = this.result.split('<head>').join('<head>\n' + apiCallCode + '\n' + serverCode + '\n ' + clientCode + '\n ');
+        } catch (e) {
+            this.result = e.toString();
+        }
         return this.result;
     }
 }

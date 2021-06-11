@@ -12,3 +12,4 @@ Application.lib.path = require('path');
     Application.lib.sha1 = require('sha-1');
     Application.lib.busboy = require("busboy");
     Application.lib.cyrillicToTranslit = new require("cyrillic-to-translit-js")();
+    Application.lib.jsdom = require('jsdom');

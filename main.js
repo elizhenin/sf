@@ -86,12 +86,7 @@
         //call AppLoader to load other MVC code
         Application._appReady = true;
         Application.System.AppLoader(Application);
-        //call ProjectLoader to load project from container file
-        // Application.System.ProjectLoader();
-        //call PublicBuilder to build and minify css,js static files from FrontSrc to Public dir
-        if (typeof Application.config.PublicBuilder != "undefined" && Application.config.PublicBuilder.Enable == 'true') {
-            await Application.System.PublicBuilder();
-        }
+        
         let _continueInit = function () {
             if (Application._appReady) {
                 //set up databases

@@ -9,7 +9,8 @@ module.exports = class extends Application.System.Controller {
     View_Template.apply('page', this.result.page).value();
     //and then put other data
     View_Template.data(this.result);
-    return await View_Template.render();
+    this.result = await View_Template.render();
+    return await super._after();
     }
 
 }

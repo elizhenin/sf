@@ -4,13 +4,13 @@ module.exports = class extends Application.Controller.Template {
         this.result.content = await content.value()
     }
 
-    async server_sampleFooFunction(name){
-        return "Hello, "+name;
+    async server_sampleFooSubFunction(name){
+        return "Hello from namespace, "+name;
     }
 
-    async client_sampleBarFunction(){
+    async client_sampleBarSubFunction(){
         let myName = "Some User";
-        myName = await server_sampleFooFunction(myName);
+        myName = await server_sampleFooSubFunction(myName);
         alert(myName);
     }
 }
