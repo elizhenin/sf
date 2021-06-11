@@ -7,7 +7,6 @@ module.exports = class {
         this._action = current_action;
 
         //define context-specific View() function
-
         this.View = function (view_path) {
             return new Application.System.MarkerScript(view_path, req, res);
         }
@@ -24,6 +23,20 @@ module.exports = class {
     }
 
     async _after() {
+        let {
+            JSDOM
+        } = Application.lib.jsdom;
+        try {
+            let document = new JSDOM(this.result);
+            this.result = document.serialize();
+            this.injectClientApiScript();
+        } catch (e) {
+            this.result = e.toString();
+        }
+        return this.result;
+    }
+
+    injectClientApiScript(){
         let clientMethods = [];
         let serverMethods = [];
         let tmp = this;
@@ -46,6 +59,11 @@ module.exports = class {
         let clientCode = `<script type="application/javascript">\n${clientMethods.join(';\n')}\n${onloadCode}\n</script>`;
         // console.log(serverCode)
         // console.log(clientCode)
+        let Session = new Application.System.Session.instance(this.req.cookies[Application.System.Session._cookieName]);
+        let apiToken = md5(+Date.now());
+
+        Session.set('sf-internal-api-token',apiToken);
+        
             let SF_servercall = async function(method,arg){
                 let  data = [];
                 for (let i = 0; i < arg.length; i++)
@@ -56,7 +74,7 @@ module.exports = class {
                     xhr.open('get', window.location.href.split('?')[0]+'?arg='+encodeURI(data));
                     xhr.setRequestHeader('content-type', 'application/json');
                     xhr.setRequestHeader('sf-internal-api-request','true');
-                    xhr.setRequestHeader('sf-internal-api-token','{{api-token}}');
+                    xhr.setRequestHeader('sf-internal-api-token','{{apiToken}}');
                     xhr.setRequestHeader('sf-internal-api-action',method);
                     xhr.onload = function () {
                         let response = JSON.parse(this.responseText);
@@ -75,18 +93,11 @@ module.exports = class {
                 return P;
             }
 
-            let apiCallCode = 'window.SF_servercall = '+eval(SF_servercall).toString();
+            let apiCallCode = 'window.SF_servercall = '+eval(SF_servercall).toString().split('{{apiToken}}').join(apiToken);
             apiCallCode = `<script type="application/javascript">\n${apiCallCode}\n</script>`;
-        let {
-            JSDOM
-        } = Application.lib.jsdom;
-        try {
-            let document = new JSDOM(this.result);
-            this.result = document.serialize();
+
             this.result = this.result.split('<head>').join('<head>\n' + apiCallCode + '\n' + serverCode + '\n ' + clientCode + '\n ');
-        } catch (e) {
-            this.result = e.toString();
-        }
-        return this.result;
     }
+
+
 }

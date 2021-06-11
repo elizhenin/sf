@@ -1,7 +1,7 @@
-let _cookieName = 'sukina-session-id';
+let _cookieName = 'sf-session-id';
 try {
     let tmp = Application.config.Session.CookieName;
-    _cookieName = tmp;
+    if(tmp != undefined) _cookieName = tmp;
 } catch (e) {}
 
 module.exports = {
@@ -36,7 +36,7 @@ module.exports = {
             let tmp = Application.config.Session.CookieMaxAge;
             maxAge = tmp;
         } catch (e) {}
-        res.setHeader('Set-Cookie', `${[Application.System.Session._cookieName]}=${id}; HttpOnly; Path=/;Max-Age=${maxAge}`)
+        res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${id}; HttpOnly; Path=/;Max-Age=${maxAge}`);
         return true;
     }
 }

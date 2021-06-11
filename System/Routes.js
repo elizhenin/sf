@@ -112,6 +112,8 @@ module.exports = class {
         let SomeError = false;
 
         //apply middlewares
+        Application.System.Session.middleware(req,res);
+
         if (typeof Application.Middleware != "undefined") {
             for (let middleware_name in Application.Middleware) {
                 let OneMiddleware = Application.Middleware[middleware_name];
@@ -144,8 +146,12 @@ module.exports = class {
         let result = false;
         let InternalAPIrequest = false;
         if (req.headers['sf-internal-api-request'] == 'true') {
-            InternalAPIrequest = true;
-            action = req.headers['sf-internal-api-action'];
+            let Session = new Application.System.Session.instance(req.cookies[Application.System.Session._cookieName]);
+            let apiToken = Session.get('sf-internal-api-token');
+            if(req.headers['sf-internal-api-token'] == apiToken){
+                InternalAPIrequest = true;
+                action = req.headers['sf-internal-api-action'];
+            }
         }
         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
