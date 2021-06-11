@@ -63,7 +63,7 @@ module.exports = class {
         let apiToken = md5(+Date.now());
 
         Session.set('sf-internal-api-token',apiToken);
-        
+
             let SF_servercall = async function(method,arg){
                 let  data = [];
                 for (let i = 0; i < arg.length; i++)
@@ -88,7 +88,11 @@ module.exports = class {
                     xhr.onerror = function (e) {
                         console.log(e)
                     };
+                    try{
                     xhr.send();
+                    }catch(e){
+                        console.log(e)
+                    }
                 })
                 return P;
             }
