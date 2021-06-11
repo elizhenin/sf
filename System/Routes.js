@@ -162,7 +162,6 @@ module.exports = class {
                 //2
                 try {
                     let arg = JSON.parse(decodeURI(req.query.arg));
-                    console.log(arg)
                     result = {status:"success",result: await _Controller['server_' + _Controller._action](...arg)};
 
                 } catch (e) {
