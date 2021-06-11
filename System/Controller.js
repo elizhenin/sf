@@ -34,14 +34,16 @@ module.exports = class {
                 clientMethods.push(methodF);
             }
             if (method.startsWith('server_')) {
-                let methodF = `async function ${method}(){return await SF_servercall("${method.split('server_')[1]}",arguments)}`;
+                let methodF = `window.${method} = async function(){return await SF_servercall("${method.split('server_')[1]}",arguments)}`;
                 serverMethods.push(methodF);
             }
         })
         // console.log(clientMethods)
         // console.log(serverMethods)
         let serverCode = `<script type="application/javascript">\n${serverMethods.join(';\n')}\n</script>`;
-        let clientCode = `<script type="application/javascript">\n${clientMethods.join(';\n')}\n</script>`;
+
+        let onloadCode = `document.addEventListener("DOMContentLoaded", async function(event) {try{await client_onload();}catch(e){}});`;
+        let clientCode = `<script type="application/javascript">\n${clientMethods.join(';\n')}\n${onloadCode}\n</script>`;
         // console.log(serverCode)
         // console.log(clientCode)
             let SF_servercall = async function(method,arg){

@@ -13,4 +13,8 @@ module.exports = class extends Application.Controller.Template {
         myName = await server_sampleFooFunction(myName);
         alert(myName);
     }
+
+    async client_onload(){
+       await this.client_sampleBarFunction();
+    }
 }
