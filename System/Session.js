@@ -33,8 +33,7 @@ module.exports = {
         } else id = Date.now() + "_" + md5(req.ip);
         let maxAge = 1000 * 60 * 15;
         try {
-            let tmp = Application.config.Session.CookieMaxAge;
-            maxAge = tmp;
+            if(Application.config.Session.CookieMaxAge != undefined)maxAge =Application.config.Session.CookieMaxAge;
         } catch (e) {}
         res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${id}; HttpOnly; Path=/;Max-Age=${maxAge}`);
         return true;

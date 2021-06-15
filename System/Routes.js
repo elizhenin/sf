@@ -19,7 +19,7 @@ module.exports = class {
                             let action = 'index';
 
                             //set Method
-                            let method = 'use';
+                            let method = 'get';
                             if (typeof route.method != 'undefined')
                                 method = route.method;
 
@@ -29,8 +29,14 @@ module.exports = class {
                                 action = route.action;
 
                             Routes[subdomain][method](route.uri, async function (req, res) {
-                                await handler(req, res, controller, action) // return {result,error}
+                                await handler(req, res, controller, action)//main handler
                             }); //end HTTP.METHOD
+
+                            if(method.toLowerCase()!='post')
+                            Routes[subdomain]['post'](route.uri, async function (req, res) {
+                                await handler(req, res, controller, action)//internal API
+                            }); //end HTTP.METHOD
+
                         }); //end forEach;
 
 
@@ -167,7 +173,7 @@ module.exports = class {
             if (InternalAPIrequest) {
                 //2
                 try {
-                    let arg = JSON.parse(decodeURI(req.query.arg));
+                    let arg = req.body;
                     result = {status:"success",result: await _Controller['server_' + _Controller._action](...arg)};
 
                 } catch (e) {

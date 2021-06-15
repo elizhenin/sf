@@ -35,7 +35,7 @@ module.exports = class {
         return this.result;
     }
 
-    injectClientApiScript(){
+    injectClientApiScript() {
         let clientMethods = [];
         let serverMethods = [];
         let tmp = this;
@@ -52,29 +52,33 @@ module.exports = class {
         })
         // console.log(clientMethods)
         // console.log(serverMethods)
-        let serverCode = `<script type="application/javascript">\n${serverMethods.join(';\n')}\n</script>`;
 
-        let onloadCode = `document.addEventListener("DOMContentLoaded", async function(event) {try{await client_onload();}catch(e){}});`;
-        let clientCode = `<script type="application/javascript">\n${clientMethods.join(';\n')}\n${onloadCode}\n</script>`;
-        // console.log(serverCode)
-        // console.log(clientCode)
-        
-        let apiToken = md5(+Date.now());
+        if (serverMethods.length + clientMethods.length > 0) {
+            let serverCode = serverMethods.join(';\n');
 
-        this.Session.set('sf-internal-api-token',apiToken);
+            let onloadCode = `document.addEventListener("DOMContentLoaded", async function(event) {try{await client_onload();}catch(e){}});`;
 
-            let SF_servercall = async function(method,arg){
-                let  data = [];
+            let clientCode = `${clientMethods.join(';\n')}\n${onloadCode}\n`;
+
+            // console.log(serverCode)
+            // console.log(clientCode)
+
+            let apiToken = md5(+Date.now());
+
+            this.Session.set('sf-internal-api-token', apiToken);
+
+            let SF_servercall = async function (method, arg) {
+                let data = [];
                 for (let i = 0; i < arg.length; i++)
                     data.push(arg[i]);
                 data = JSON.stringify(data)
                 let P = new Promise(function (resolve, reject) {
                     let xhr = new XMLHttpRequest();
-                    xhr.open('get', window.location.href.split('?')[0]+'?arg='+encodeURI(data));
+                    xhr.open('post', window.location.href);
                     xhr.setRequestHeader('content-type', 'application/json');
-                    xhr.setRequestHeader('sf-internal-api-request','true');
-                    xhr.setRequestHeader('sf-internal-api-token','{{apiToken}}');
-                    xhr.setRequestHeader('sf-internal-api-action',method);
+                    xhr.setRequestHeader('sf-internal-api-request', 'true');
+                    xhr.setRequestHeader('sf-internal-api-token', '{{apiToken}}');
+                    xhr.setRequestHeader('sf-internal-api-action', method);
                     xhr.onload = function () {
                         let response = JSON.parse(this.responseText);
                         if (response.status == 'error') {
@@ -87,20 +91,16 @@ module.exports = class {
                     xhr.onerror = function (e) {
                         console.log(e)
                     };
-                    try{
-                    xhr.send();
-                    }catch(e){
+                    try {
+                        xhr.send(data);
+                    } catch (e) {
                         console.log(e)
                     }
                 })
                 return P;
             }
-
-            let apiCallCode = 'window.SF_servercall = '+eval(SF_servercall).toString().split('{{apiToken}}').join(apiToken);
-            apiCallCode = `<script type="application/javascript">\n${apiCallCode}\n</script>`;
-
-            this.result = this.result.split('<head>').join('<head>\n' + apiCallCode + '\n' + serverCode + '\n ' + clientCode + '\n ');
+            let apiCallCode = 'window.SF_servercall = ' + eval(SF_servercall).toString().split('{{apiToken}}').join(apiToken);
+            this.result = this.result.split('<head>').join('<head>\n<script type="application/javascript">\n' + apiCallCode + '\n' + serverCode + '\n' + clientCode + '\n</script>');
+        }
     }
-
-
 }
