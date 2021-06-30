@@ -35,11 +35,27 @@ module.exports = class {
         return this.result;
     }
 
-    injectClientApiScript() {
+    injectClientApiScript() {   
         let clientMethods = [];
         let serverMethods = [];
         let tmp = this;
-        let methods = Object.getOwnPropertyNames(tmp.__proto__);
+
+        let collectMethods = function(obj){
+            let result = []
+            while(result.indexOf("__proto__") == -1){
+                result = result.concat(Object.getOwnPropertyNames(obj));
+                obj = obj.__proto__;
+            }
+            let _filter = {};
+            result.forEach(item=>{
+                if(item.startsWith('client_') || item.startsWith('server_'))
+                _filter[item] = ""
+            });
+            result = Object.keys(_filter);
+
+            return result;
+        }
+        let methods = collectMethods(tmp);
         methods.forEach(function (method) {
             if (method.startsWith('client_')) {
                 let methodF = eval(tmp[method]).toString().split('async client_').join('async function client_');
