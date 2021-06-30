@@ -173,9 +173,13 @@ module.exports = class {
             if (InternalAPIrequest) {
                 //2
                 try {
-                    let arg = req.body;
-                    result = {status:"success",result: await _Controller['server_' + _Controller._action](...arg)};
+                    let arg = req.body.arg;
+                    arg = CryptoJS.AES.decrypt(arg, req.headers['sf-internal-api-token']);
+                    arg = arg.toString(CryptoJS.enc.Utf8);
+                    arg = JSON.parse(arg);
 
+                    result = {status:"success",result: await _Controller['server_' + _Controller._action](...arg)};
+                    result.result = CryptoJS.AES.encrypt(JSON.stringify(result.result), req.headers['sf-internal-api-token']).toString();
                 } catch (e) {
                     //found error on controller.action stage
                     SomeError = "Application.Controller." + controller + "." + _Controller._action+"() causes problem " + " [" + e + "]";
