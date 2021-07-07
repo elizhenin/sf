@@ -35,21 +35,21 @@ module.exports = class {
         return this.result;
     }
 
-    injectClientApiScript() {   
+    injectClientApiScript() {
         let clientMethods = [];
         let serverMethods = [];
         let tmp = this;
 
-        let collectMethods = function(obj){
+        let collectMethods = function (obj) {
             let result = []
-            while(result.indexOf("__proto__") == -1){
+            while (result.indexOf("__proto__") == -1) {
                 result = result.concat(Object.getOwnPropertyNames(obj));
                 obj = obj.__proto__;
             }
             let _filter = {};
-            result.forEach(item=>{
-                if(item.startsWith('client_') || item.startsWith('server_'))
-                _filter[item] = ""
+            result.forEach(item => {
+                if (item.startsWith('client_') || item.startsWith('server_'))
+                    _filter[item] = ""
             });
             result = Object.keys(_filter);
 
@@ -786,7 +786,7 @@ code.google.com/p/crypto-js/wiki/License
             let SF_servercall = async function (method, arg) {
                 let _arg = [];
                 for (let i = 0; i < arg.length; i++)
-                _arg.push(arg[i]);
+                    _arg.push(arg[i]);
                 _arg = JSON.stringify(_arg);
                 _arg = CryptoJS.AES.encrypt(_arg, '{{apiToken}}').toString();
                 let P = new Promise(function (resolve, reject) {
@@ -805,7 +805,11 @@ code.google.com/p/crypto-js/wiki/License
                             let result = response.result;
                             result = CryptoJS.AES.decrypt(result, '{{apiToken}}');
                             result = result.toString(CryptoJS.enc.Utf8);
-                            result = JSON.parse(result);
+                            try {
+                                result = JSON.parse(result);
+                            } catch (e) {
+                                console.log(e)
+                            }
                             resolve(result);
                         }
                     };
@@ -813,14 +817,16 @@ code.google.com/p/crypto-js/wiki/License
                         console.log(e)
                     };
                     try {
-                        xhr.send(JSON.stringify({arg:_arg}));
+                        xhr.send(JSON.stringify({
+                            arg: _arg
+                        }));
                     } catch (e) {
                         console.log(e)
                     }
                 })
                 return P;
             }
-            let apiCallCode = 'window.SF_init = '+eval(SF_CryptoJS).toString()+';\n'+'SF_init();\n'+'window.SF_servercall = ' + eval(SF_servercall).toString().split('{{apiToken}}').join(apiToken);
+            let apiCallCode = 'window.SF_init = ' + eval(SF_CryptoJS).toString() + ';\n' + 'SF_init();\n' + 'window.SF_servercall = ' + eval(SF_servercall).toString().split('{{apiToken}}').join(apiToken);
             this.result = this.result.split('<head>').join('<head>\n<script type="application/javascript">\n' + apiCallCode + '\n' + serverCode + '\n' + clientCode + '\n</script>');
         }
     }
