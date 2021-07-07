@@ -258,7 +258,7 @@ module.exports = class MarkerScript {
                                     View_Block.data(this._data);
                                     this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                                 } else {
-                                    ErrorCatcher('Error: View ' + view_path + ' not found')
+                                    ErrorCatcher('Warning: View ' + view_path + ' not found')
                                 }
 
                             }
