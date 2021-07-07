@@ -10,6 +10,11 @@ module.exports = class {
 
             let type_of_route = typeof Application.routes[subdomain];
 
+            //inject InternalAPI route
+            Routes[subdomain]['get'](/\/@sf-internal-api(.*)/, async function (req, res) {
+                await Application.System.InternalAPI.injectRouteScriptGenerator(req, res) //handler
+            });
+
             switch (type_of_route) {
                 case "object": {
                     if (Application.routes[subdomain].length > 0) {
@@ -29,13 +34,13 @@ module.exports = class {
                                 action = route.action;
 
                             Routes[subdomain][method](route.uri, async function (req, res) {
-                                await handler(req, res, controller, action)//main handler
+                                await handler(req, res, controller, action) //main handler
                             }); //end HTTP.METHOD
 
-                            if(method.toLowerCase()!='post')
-                            Routes[subdomain]['post'](route.uri, async function (req, res) {
-                                await handler(req, res, controller, action)//internal API
-                            }); //end HTTP.METHOD
+                            if (method.toLowerCase() != 'post')
+                                Routes[subdomain]['post'](route.uri, async function (req, res) {
+                                    await handler(req, res, controller, action) //internal API
+                                }); //end HTTP.METHOD
 
                         }); //end forEach;
 
@@ -74,6 +79,7 @@ module.exports = class {
                 }
                 default: {}
             }
+
             Application.HTTP.use(this.apply(subdomain, Routes[subdomain]));
         }
 
@@ -118,7 +124,7 @@ module.exports = class {
         let SomeError = false;
 
         //apply middlewares
-        Application.System.Session.middleware(req,res);
+        Application.System.Session.middleware(req, res);
 
         if (typeof Application.Middleware != "undefined") {
             for (let middleware_name in Application.Middleware) {
@@ -150,15 +156,9 @@ module.exports = class {
         use Controller if it exists
         */
         let result = false;
-        let InternalAPIrequest = false;
-        if (req.headers['sf-internal-api-request'] == 'true') {
-            let Session = new Application.System.Session.instance(req.cookies[Application.System.Session._cookieName]);
-            let apiToken = Session.get('sf-internal-api-token');
-            if(req.headers['sf-internal-api-token'] == apiToken){
-                InternalAPIrequest = true;
-                action = req.headers['sf-internal-api-action'];
-            }
-        }
+        let InternalAPIrequest = Application.System.InternalAPI.routeInternalAPIrequestCheck(req);
+        if (InternalAPIrequest) action = req.headers['sf-internal-api-action'];
+
         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
             _Controller = new _Controller(req, res, controller, action);
@@ -173,17 +173,14 @@ module.exports = class {
             if (InternalAPIrequest) {
                 //2
                 try {
-                    let arg = req.body.arg;
-                    arg = CryptoJS.AES.decrypt(arg, req.headers['sf-internal-api-token']);
-                    arg = arg.toString(CryptoJS.enc.Utf8);
-                    arg = JSON.parse(arg);
-
-                    result = {status:"success",result: await _Controller['server_' + _Controller._action](...arg)};
-                    result.result = CryptoJS.AES.encrypt(JSON.stringify(result.result), req.headers['sf-internal-api-token']).toString();
+                    result = await Application.System.InternalAPI.routeInternalAPIrequestWork(req, _Controller);
                 } catch (e) {
                     //found error on controller.action stage
-                    SomeError = "Application.Controller." + controller + "." + _Controller._action+"() causes problem " + " [" + e + "]";
-                    result = {status:"error",message: SomeError};
+                    SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
+                    result = {
+                        status: "error",
+                        message: SomeError
+                    };
                 }
             } else {
                 //2
