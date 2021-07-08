@@ -10,9 +10,13 @@ module.exports = class {
 
             let type_of_route = typeof Application.routes[subdomain];
 
-            //inject InternalAPI route
-            Routes[subdomain]['get'](/\/@sf-internal-api(.*)/, async function (req, res) {
+            //inject InternalAPI routes. GET for script, POST for execution
+            Routes[subdomain]['get'](/\/@sf-internal-api(.*)/,  async function (req, res) {
                 await Application.System.InternalAPI.injectRouteScriptGenerator(req, res) //handler
+            });
+           
+            Routes[subdomain]['post'](/\/@sf-internal-api(.*)/, async function (req, res) {
+                await Application.System.InternalAPI.ExecuteServerFunction(req, res) //handler
             });
 
             switch (type_of_route) {
@@ -156,8 +160,6 @@ module.exports = class {
         use Controller if it exists
         */
         let result = false;
-        let InternalAPIrequest = Application.System.InternalAPI.routeInternalAPIrequestCheck(req);
-        if (InternalAPIrequest) action = req.headers['sf-internal-api-action'];
 
         if (typeof Application.System.ObjSelector(Application.Controller, controller) != "undefined") {
             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
@@ -170,33 +172,19 @@ module.exports = class {
                 SomeError = "Application.Controller." + controller + "._before() causes problem " + " [" + e + "]";
             }
 
-            if (InternalAPIrequest) {
-                //2
-                try {
-                    result = await Application.System.InternalAPI.routeInternalAPIrequestWork(req, _Controller);
-                } catch (e) {
-                    //found error on controller.action stage
-                    SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
-                    result = {
-                        status: "error",
-                        message: SomeError
-                    };
-                }
-            } else {
-                //2
-                try {
-                    await _Controller['action_' + _Controller._action]();
-                } catch (e) {
-                    //found error on controller.action stage
-                    SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
-                }
-                //4
-                try {
-                    result = await _Controller._after();
-                } catch (e) {
-                    //found error on controller._after stage
-                    SomeError = "Application.Controller." + controller + "._after() causes problem " + " [" + e + "]";
-                }
+            //2
+            try {
+                await _Controller['action_' + _Controller._action]();
+            } catch (e) {
+                //found error on controller.action stage
+                SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
+            }
+            //4
+            try {
+                result = await _Controller._after();
+            } catch (e) {
+                //found error on controller._after stage
+                SomeError = "Application.Controller." + controller + "._after() causes problem " + " [" + e + "]";
             }
 
         } else {
