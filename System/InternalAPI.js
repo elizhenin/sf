@@ -56,7 +56,7 @@ let InternalAPI = {
             controller.result = apiCallCode + '\n' + serverCode + '\n' + clientCode + '\n';
 
             controller.result = (await minify(controller.result)).code;
-            controller.result = this.CryptoJS+'\n'+controller.result;
+            controller.result = this.CryptoJS + '\n' + controller.result;
         }
     },
 
@@ -81,15 +81,37 @@ let InternalAPI = {
         };
 
         if (InternalAPIrequest) {
+            //apply middlewares
+            Application.System.Session.middleware(req, res);
+
+            if (typeof Application.Middleware != "undefined") {
+                for (let middleware_name in Application.Middleware) {
+                    let OneMiddleware = Application.Middleware[middleware_name];
+                    try {
+                        await OneMiddleware(req, res);
+                    } catch (e) {
+                        SomeError = "Application.Middleware." + middleware_name + "() causes problem " + " [" + e + "]";
+                    }
+                }
+            }
+
             let action = req.headers['sf-internal-api-action'];
             let controller = req.path.split('@sf-internal-api')[1].split('/').join('.').substr(1);
             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
             _Controller = new _Controller(req, res, controller, action);
+            //1
+            try {
+                await _Controller._before();
+            } catch (e) {
+                //found error on controller._before stage
+                SomeError = "Application.Controller." + controller + "._before() causes problem " + " [" + e + "]";
+            }
 
             let arg = req.body.arg;
             arg = CryptoJS.AES.decrypt(arg, req.headers['sf-internal-api-token']);
             arg = arg.toString(CryptoJS.enc.Utf8);
             arg = JSON.parse(arg);
+            //2
             try {
                 result = {
                     status: "success",

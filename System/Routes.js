@@ -179,7 +179,7 @@ module.exports = class {
                 //found error on controller.action stage
                 SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
             }
-            //4
+            //3
             try {
                 result = await _Controller._after();
             } catch (e) {
