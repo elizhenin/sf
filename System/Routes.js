@@ -41,11 +41,6 @@ module.exports = class {
                                 await handler(req, res, controller, action) //main handler
                             }); //end HTTP.METHOD
 
-                            if (method.toLowerCase() != 'post')
-                                Routes[subdomain]['post'](route.uri, async function (req, res) {
-                                    await handler(req, res, controller, action) //internal API
-                                }); //end HTTP.METHOD
-
                         }); //end forEach;
 
 
