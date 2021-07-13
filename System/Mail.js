@@ -1,6 +1,10 @@
 //basic Sukina Framework mail class
 module.exports = class {
     constructor(m_config = 'default') {
+          //define context-specific View() function
+          this.View = function (view_path) {
+            return new Application.System.MarkerScript(view_path, {}, {});
+        };
         this.transporter = Application.lib.nodemailer.createTransport(config[m_config]);
     }
     async send(to, subject, html, attachments) {
