@@ -79,7 +79,7 @@ let InternalAPI = {
         let result = {
             status: "error"
         };
-
+        let SomeError = "";
         if (InternalAPIrequest) {
             //apply middlewares
             Application.System.Session.middleware(req, res);
@@ -127,6 +127,7 @@ let InternalAPI = {
                 };
             }
         }
+        console.log(SomeError)
         res.send(result);
     },
 
