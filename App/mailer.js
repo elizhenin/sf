@@ -1,5 +1,5 @@
 
-let config = {
+module.exports = {
     default: {
         host: 'localhost',
         port: 587,
@@ -13,19 +13,3 @@ let config = {
         },
     }
 };
-
-
-
-module.exports = function (mailOptions, m_config = 'default') {
-    return new Promise((resolve, reject) => {
-        let transporter = Application.lib.nodemailer.createTransport(config[m_config]);
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                ErrorCatcher(error);
-                resolve(false);
-            } else {
-                resolve(true);
-            }
-        });
-    })
-}

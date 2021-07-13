@@ -7,6 +7,7 @@ module.exports = class {
         };
         this.DB = function() {
             return Application.DB[this._settings.db_config];
-        }
+        };
+        this.Mailer = Application.System.Mail(mailer_config);
     }
 }
