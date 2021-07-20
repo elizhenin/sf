@@ -9,12 +9,8 @@ Application.lib.path = require('path');
     Application.lib.jsdom = require('jsdom');
     Application.lib.sha1 = require('sha-1');
     Application.lib.StrUnEscape = require('backslash');
-    //HTTP
-    Application.lib.express = require('express');
-    Application.lib['body-parser'] = require('body-parser');
-    Application.lib['cookie-parser'] = require('cookie-parser');//
+    //HTTP does this really needed?
     Application.lib.busboy = require("busboy");
-
-    //HTTP2
+    //HTTP
     Application.lib.http = require('http');
     Application.lib['path-to-regexp'] = require('path-to-regexp');
