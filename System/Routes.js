@@ -12,11 +12,11 @@ module.exports = class {
 
             //inject InternalAPI routes. GET for script, POST for execution
             Routes[subdomain]['get'](/\/@sf-internal-api(.*)/,  async function (req, res) {
-                await Application.System.InternalAPI.injectRouteScriptGenerator(req, res) //handler
+               res.send(await Application.System.InternalAPI.injectRouteScriptGenerator(req, res)) //handler
             });
            
             Routes[subdomain]['post'](/\/@sf-internal-api(.*)/, async function (req, res) {
-                await Application.System.InternalAPI.ExecuteServerFunction(req, res) //handler
+                res.send(await Application.System.InternalAPI.ExecuteServerFunction(req, res)) //handler
             });
 
             switch (type_of_route) {

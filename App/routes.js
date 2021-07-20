@@ -21,27 +21,27 @@ if type of value is Object, then it's structure is
  */
 module.exports = {
     //for any site, manual setup
-    '.*': [{
-        name: 'Welcome',
-        method: 'get',
-        uri: '/',
-        controller: 'Welcome'
-    },
-    {
-        name: 'Api requests',
-        method: 'post',
-        uri: '/api/:action?/:arg?',
-        controller: 'Api',
-        action: 'noaction'
-    },
-    {
-        name:'Articles sample route',
-        method:'get',
-        uri:'/:controller/:action?', //as in Express.js
-        action: 'index',//default action
-    }
-    ],
-
+    // '.*': [{
+    //     name: 'Welcome',
+    //     method: 'get',
+    //     uri: '/',
+    //     controller: 'Welcome'
+    // },
+    // {
+    //     name: 'Api requests',
+    //     method: 'post',
+    //     uri: '/api/:action?/:arg?',
+    //     controller: 'Api',
+    //     action: 'noaction'
+    // },
+    // {
+    //     name:'Articles sample route',
+    //     method:'get',
+    //     uri:'/:controller/:action?', //as in Express.js
+    //     action: 'index',//default action
+    // }
+    // ],
+    'otherDomain.ru':"",
     //for localhost, auto routing
     'localhost':""
 };

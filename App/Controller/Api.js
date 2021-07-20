@@ -1,8 +1,8 @@
 module.exports = class extends Application.System.Controller {
     async _before() {
         //CORS access from any:
-        this.res.header('Access-Control-Allow-Origin', '*');
-        this.res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        this.res.setHeader('Access-Control-Allow-Origin', '*');
+        this.res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         this.result = {
             status: 'success'
         }
@@ -19,12 +19,13 @@ module.exports = class extends Application.System.Controller {
             this.result.status = 'error',
                 this.result.message = 'Unautorized access denied'
         }
-        return this.result;
     }
 
-    async action_noaction() {
-        return this.result;
+    async _after() {
+        return JSON.stringify(this.result);
     }
+
+    async action_noaction() {}
     async action_LCRUD() {
         if (this.result.status == 'error') {
 
@@ -92,7 +93,6 @@ module.exports = class extends Application.System.Controller {
             }
 
         }
-        return this.result
     }
 
 }

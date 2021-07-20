@@ -122,6 +122,8 @@
                     console.log("listen started on port " + Application.config.Server.Port);
                     Application.Scheduler.init();
                 });
+
+                Application.HTTP2 = new Application.System.HTTP();
             } else setTimeout(_continueInit, 100);
         }
         _continueInit();

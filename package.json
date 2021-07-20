@@ -23,6 +23,7 @@
         "mysql2": "^2.2.5",
         "nodemailer": "^6.6.1",
         "oracledb": "^4.2.0",
+        "path-to-regexp": "^6.2.0",
         "pg": "^7.18.2",
         "request-promise": "^4.2.6",
         "sha-1": "^1.0.0",
