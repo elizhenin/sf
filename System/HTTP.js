@@ -90,7 +90,7 @@ let RequestHandler = class {
                 break
             }
         }
-        if (domainsRoutes !="false") {
+        if (domainsRoutes != "false") {
             let type_of_route = typeof domainsRoutes;
             let Controller = "Default";
             let action = "index"
@@ -103,7 +103,7 @@ let RequestHandler = class {
                 if (this.req.method.toLowerCase() == 'post') {
                     this.result = JSON.stringify(await Application.System.InternalAPI.ExecuteServerFunction(this.req, this.res)) //handler
                 }
-            } else{
+            } else {
 
                 //detect route match
                 switch (type_of_route) {
@@ -216,53 +216,74 @@ let RequestHandler = class {
     }
 
     async body_parser() {
-        let req = this.req;
-        let P = new Promise(function (resolve, reject) {
-            let body = "";
-            req.on('data', chunk => {
-                body += chunk.toString(); // convert Buffer to string
+        let body = "";
+        let parsers = {
+            "application/json": function (body) {
+                let result = false;
+                try {
+                    result = JSON.parse(body)
+                } catch (e) {}
+                return result
+            }
+        }
+        let ContentType = this.req.headers['content-type'];
+        if (ContentType && Object.keys(parsers).indexOf(ContentType) > -1) {
+            let req = this.req;
+            let P = new Promise(function (resolve, reject) {
+                let body = "";
+                req.on('data', chunk => {
+                    body += chunk.toString(); // convert Buffer to string
+                });
+                req.on('end', () => {
+                    resolve(body);
+                });
             });
-            req.on('end', () => {
-                resolve(body);
-            });
-        });
-        let body = await P;
-        try {
-            body = JSON.parse(body);
-        } catch (e) {}
+            body = await P;
+            body = parsers[ContentType](body);
+        }
         this.req.body = body;
     }
 }
 
 module.exports = class {
     constructor() {
-        this.ListenPort = Application.config.Server.Port * 1 + 1;
+        let MaxListeners = Application.config.Server.MaxListeners * 1;
+        let ActiveListeners = 0;
+        this.ListenPort = Application.config.Server.Port * 1;
         this.server = Application.lib.http.createServer(async function (req, res) {
+            ActiveListeners++;
             Application.System.SrvLogger.access(req);
+            if (ActiveListeners <= MaxListeners) {
+                let Handler = new RequestHandler(req, res);
+                //parse body
+                await Handler.body_parser();
 
-            let Handler = new RequestHandler(req, res);
-            //parse body
-            await Handler.body_parser();
+                //apply middlewares
+                await Handler.middlewares();
 
-            //apply middlewares
-            await Handler.middlewares();
+                //try to send static file
+                if (await Handler.static()) {
+                    //static found and sended
+                } else {
+                    //static not found
+                    await Handler.router();
 
-            //try to send static file
-            if (await Handler.static()) {
-                //static found and sended
-            } else {
-                //static not found
-                await Handler.router();
-
-                if (!Handler.Error) { //all ok
-                    if (!res.headersSent) res.end(Handler.result);
-                    Application.System.SrvLogger.access(req);
-                } else { //errors found
-                    console.log(Handler.Error)
-                    Application.System.SrvLogger.error(req, Handler.Error);
-                    res.end(Handler.Error);
+                    if (!Handler.Error) { //all ok
+                        if (!res.headersSent) res.end(Handler.result);
+                        Application.System.SrvLogger.access(req);
+                    } else { //errors found
+                        console.log(Handler.Error)
+                        Application.System.SrvLogger.error(req, Handler.Error);
+                        res.end(Handler.Error);
+                    }
                 }
+            } else {
+                console.log(MaxListeners + ' exceeded');
+                Application.System.SrvLogger.error(req, MaxListeners + ' exceeded');
+                res.end('Error: MaxListeners exceeded, try later');
             }
+            this.ActiveListeners--;
+
         });
 
         this.server.on('clientError', (err, socket) => {

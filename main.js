@@ -95,35 +95,10 @@
                     Application.DB[key] = require('knex')(Application.database[key]);
                 }
 
-                //set up server express
-                Application.HTTP = new Application.lib.express();
-                Application.HTTP.setMaxListeners(Application.config.Server.MaxListeners * 1);
-
-                //cookie parser
-                Application.HTTP.use(Application.lib['cookie-parser']());
-
-                //static files
-                Application.HTTP.use(Application.lib.express.static(Application.config.Directories.AppPublic));
-
-                //body parser 
-                Application.HTTP.use(Application.lib['body-parser'].json({
-                    limit: '100mb'
-                }));
-                // to support JSON-encoded bodies
-                Application.HTTP.use(Application.lib['body-parser'].urlencoded({
-                    extended: false
-                }));
-
-                //routes
-                new Application.System.Routes;
-                
                 //start listening
-                Application.HTTP.listen(Application.config.Server.Port, function () {
-                    console.log("listen started on port " + Application.config.Server.Port);
-                    Application.Scheduler.init();
-                });
+                Application.HTTP = new Application.System.HTTP();
+                Application.Scheduler.init();
 
-                Application.HTTP2 = new Application.System.HTTP();
             } else setTimeout(_continueInit, 100);
         }
         _continueInit();
