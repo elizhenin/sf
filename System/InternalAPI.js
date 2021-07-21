@@ -36,8 +36,6 @@ let InternalAPI = {
                 serverMethods.push(methodF);
             }
         })
-        // console.log(clientMethods)
-        // console.log(serverMethods)
 
         if (serverMethods.length + clientMethods.length > 0) {
             let serverCode = serverMethods.join(';\n');
@@ -55,6 +53,7 @@ let InternalAPI = {
 
             controller.result = (await minify(controller.result)).code;
             controller.result = this.CryptoJS + '\n' + controller.result;
+            controller.res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         }
     },
 
@@ -127,7 +126,7 @@ let InternalAPI = {
                 };
             }
         }
-        console.log(SomeError)
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         return result;
     },
 

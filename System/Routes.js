@@ -116,7 +116,8 @@ let RequestHandler = class {
                 async function worker() {
                     res.writeHead(200, {
                         'Content-Type': ext_to_mime(filepath.split('.').reverse()[0]),
-                        'Content-Length': stat.size
+                        'Content-Length': stat.size,
+                        'Cache-Control': 'public, max-age=31536000'
                     });
                     let readStream = Application.lib.fs.createReadStream(filepath);
                     readStream.pipe(res);
