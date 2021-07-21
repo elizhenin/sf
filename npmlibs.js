@@ -4,7 +4,6 @@ Application.lib.path = require('path');
     Application.lib.nodemailer = require('nodemailer');
     Application.lib.cluster = require('cluster');
     Application.lib.request = require('request-promise');
-    Application.lib['sync-sqlite'] = require('sync-sqlite');
     Application.lib.cyrillicToTranslit = new require("cyrillic-to-translit-js")();
     Application.lib.jsdom = require('jsdom');
     Application.lib.sha1 = require('sha-1');
