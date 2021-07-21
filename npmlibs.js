@@ -9,8 +9,6 @@ Application.lib.path = require('path');
     Application.lib.sha1 = require('sha-1');
     Application.lib.StrUnEscape = require('backslash');
     Application.lib.terser = require('terser');
-    //HTTP does this really needed?
-    Application.lib.busboy = require("busboy");
     //HTTP
     Application.lib.http = require('http');
     Application.lib['path-to-regexp'] = require('path-to-regexp');

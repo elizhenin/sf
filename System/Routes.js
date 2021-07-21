@@ -1,3 +1,53 @@
+module.exports = class {
+    constructor() {
+        let MaxListeners = Application.config.Server.MaxListeners * 1;
+        let ActiveListeners = 0;
+
+        this.ListenPort = Application.config.Server.Port * 1;
+
+        this.server = Application.lib.http.createServer(async function (req, res) {
+            ActiveListeners++;
+            Application.System.SrvLogger.access(req);
+            if (ActiveListeners <= MaxListeners) {
+                let Handler = new RequestHandler(req, res);
+                //parse body
+                await Handler.body_parser();
+
+                //apply middlewares
+                await Handler.middlewares();
+
+                //try to send static file
+                if (await Handler.static()) {
+                    //static found and sended
+                } else {
+                    //static not found
+                    await Handler.router();
+
+                    if (!Handler.Error) { //all ok
+                        if (!res.headersSent) res.end(Handler.result);
+                        Application.System.SrvLogger.access(req);
+                    } else { //errors found
+                        console.log(Handler.Error.toString())
+                        Application.System.SrvLogger.error(req, Handler.Error);
+                        res.end(Handler.Error);
+                    }
+                }
+            } else {
+                console.log(MaxListeners + ' exceeded');
+                Application.System.SrvLogger.error(req, MaxListeners + ' exceeded');
+                res.end('Error: MaxListeners exceeded, try later');
+            }
+            ActiveListeners--;
+        });
+        this.server.on('clientError', (err, socket) => {
+            Application.System.SrvLogger.error({}, err);
+            socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+        });
+        this.server.listen(this.ListenPort);
+        console.log("listen started on port " + this.ListenPort);
+    }
+}
+
 let RequestHandler = class {
     constructor(req, res) {
         this.req = req;
@@ -56,7 +106,8 @@ let RequestHandler = class {
             let filepath = Application.lib.path.join(Application.config.Directories.AppPublic, this.req.path);
             let stat;
             try {
-                stat = Application.lib.fs.statSync(filepath);
+                stat = await Application.lib.fs_promises.stat(filepath);
+                if (stat.isDirectory()) result = false;
             } catch (e) {
                 result = false;
             }
@@ -218,94 +269,67 @@ let RequestHandler = class {
     async body_parser() {
         let body = "";
         let parsers = {
-            "application/json": function (body) {
+            "application/json": async function (body) {
                 let result = false;
                 try {
-                    result = JSON.parse(body)
+                    result = JSON.parse(body.toString())
                 } catch (e) {}
                 return result
             },
-            "text/plain": function (body) {
-                let result = false;
+            "text/plain": async function (body, ContentTypeParams) {
+                let result = "";
                 try {
                     result = body.toString()
                 } catch (e) {}
                 return result
+            },
+            "application/x-www-form-urlencoded": async function (body) {
+                let result = {}
+                body = body.toString();
+                if (body.length) {
+                    let pairs = body.split('&');
+                    pairs.forEach(function (pair) {
+                        let [key, value] = pair.split('=');
+                        key = decodeURIComponent(key);
+                        value = decodeURIComponent(value);
+                        result[key] = value;
+                    })
+                }
+                return result
+            },
+            "multipart/form-data": async function (body, ContentTypeParams) {
+                let multipart = new multipartFormParser();
+                let boundary = multipart.getBoundary(ContentTypeParams);
+                let parts = multipart.Parse(body, boundary);
+                return parts;
             }
         }
+        let ContentTypeParams = "";
         let ContentType = this.req.headers['content-type'];
+        if (ContentType) {
+            ContentType = ContentType.split(';');
+            ContentTypeParams = ContentType[1];
+            ContentType = ContentType[0];
+        }
+
         if (ContentType && Object.keys(parsers).indexOf(ContentType) > -1) {
             let req = this.req;
             let P = new Promise(function (resolve, reject) {
-                let body = "";
+                let body = Buffer.alloc(0);
                 req.on('data', chunk => {
-                    body += chunk.toString(); // convert Buffer to string
+                    body = Buffer.concat([body, chunk]);
                 });
                 req.on('end', () => {
                     resolve(body);
                 });
             });
             body = await P;
-            body = parsers[ContentType](body);
-        }
+            body = await parsers[ContentType](body, ContentTypeParams);
+         }
         this.req.body = body;
     }
 }
 
-module.exports = class {
-    constructor() {
-        let MaxListeners = Application.config.Server.MaxListeners * 1;
-        let ActiveListeners = 0;
-
-        this.ListenPort = Application.config.Server.Port * 1;
-
-        this.server = Application.lib.http.createServer(async function (req, res) {
-            ActiveListeners++;
-            Application.System.SrvLogger.access(req);
-            if (ActiveListeners <= MaxListeners) {
-                let Handler = new RequestHandler(req, res);
-                //parse body
-                await Handler.body_parser();
-
-                //apply middlewares
-                await Handler.middlewares();
-
-                //try to send static file
-                if (await Handler.static()) {
-                    //static found and sended
-                } else {
-                    //static not found
-                    await Handler.router();
-
-                    if (!Handler.Error) { //all ok
-                        if (!res.headersSent) res.end(Handler.result);
-                        Application.System.SrvLogger.access(req);
-                    } else { //errors found
-                        console.log(Handler.Error)
-                        Application.System.SrvLogger.error(req, Handler.Error);
-                        res.end(Handler.Error);
-                    }
-                }
-            } else {
-                console.log(MaxListeners + ' exceeded');
-                Application.System.SrvLogger.error(req, MaxListeners + ' exceeded');
-                res.end('Error: MaxListeners exceeded, try later');
-            }
-            this.ActiveListeners--;
-
-        });
-
-        this.server.on('clientError', (err, socket) => {
-            Application.System.SrvLogger.error({}, err);
-            socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-        });
-
-        this.server.listen(this.ListenPort);
-
-        console.log("listen started on port " + this.ListenPort);
-    }
-
-}
 
 let ext_to_mime = function (ext) {
     let result = "text/plain";
@@ -1482,4 +1506,134 @@ let ext_to_mime = function (ext) {
         result = mime[ext]
     }
     return result;
+}
+
+let multipartFormParser = class {
+    /**
+     	Multipart Parser (Finite State Machine)
+    	usage:
+    	var multipart = require('./multipart.js');
+    	var body = multipart.DemoData(); 							   // raw body
+    	var body = new Buffer(event['body-json'].toString(),'base64'); // AWS case
+    	
+    	var boundary = multipart.getBoundary(event.params.header['content-type']);
+    	var parts = multipart.Parse(body,boundary);
+    	
+    	// each part is:
+    	// { filename: 'A.txt', type: 'text/plain', data: <Buffer 41 41 41 41 42 42 42 42> }
+    	author:  Cristian Salazar (christiansalazarh@gmail.com) www.chileshift.cl
+    			 Twitter: @AmazonAwsChile
+     */
+    Parse(multipartBodyBuffer, boundary) {
+        let process = function (part) {
+            // will transform this object:
+            // { header: 'Content-Disposition: form-data; name="uploads[]"; filename="A.txt"',
+            //	 info: 'Content-Type: text/plain',
+            //	 part: 'AAAABBBB' }
+            // into this one:
+            // { filename: 'A.txt', type: 'text/plain', data: <Buffer 41 41 41 41 42 42 42 42> }
+            let obj = function (n='') {
+                let o, k, a, b;
+                k = n.split('=');
+                a = k[0].trim();
+                b = JSON.parse(k[1].trim());
+                o = {};
+                o[a] = b;
+                return o;
+            }
+            let header = part.header.split(';');
+            let file = obj(header[2]);
+            let contentType = part.info.split(':')[1].trim();
+            file['type'] = contentType;
+            file['data'] = Buffer.from(part.part);
+
+            let fieldName = JSON.parse(header[1].split('=')[1].trim());
+            return [fieldName,file];
+        }
+
+        let lastline = '';
+        let header = '';
+        let info = '';
+        let state = 0;
+        let buffer = [];
+        let allParts = {};
+
+        for (let i = 0; i < multipartBodyBuffer.length; i++) {
+            let oneByte = multipartBodyBuffer[i];
+            let prevByte = i > 0 ? multipartBodyBuffer[i - 1] : null;
+            let newLineDetected = ((oneByte == 0x0a) && (prevByte == 0x0d)) ? true : false;
+            let newLineChar = ((oneByte == 0x0a) || (oneByte == 0x0d)) ? true : false;
+
+            if (!newLineChar)
+                lastline += String.fromCharCode(oneByte);
+
+            if ((0 == state) && newLineDetected) {
+                if (("--" + boundary) == lastline) {
+                    state = 1;
+                }
+                lastline = '';
+            } else
+            if ((1 == state) && newLineDetected) {
+                header = lastline;
+                state = 2;
+                lastline = '';
+            } else
+            if ((2 == state) && newLineDetected) {
+                info = lastline;
+                state = 3;
+                lastline = '';
+            } else
+            if ((3 == state) && newLineDetected) {
+                state = 4;
+                buffer = [];
+                lastline = '';
+            } else
+            if (4 == state) {
+                if (lastline.length > (boundary.length + 4)) lastline = ''; // mem save
+                if (((("--" + boundary) == lastline))) {
+                    let j = buffer.length - lastline.length;
+                    let part = buffer.slice(0, j - 1);
+                    let p = {
+                        header: header,
+                        info: info,
+                        part: part
+                    };
+                    let [fieldName,readyPart] = process(p);
+                    allParts[fieldName] = readyPart;
+                    // allParts.push(process(p));
+                    buffer = [];
+                    lastline = '';
+                    state = 5;
+                    header = '';
+                    info = '';
+                } else {
+                    buffer.push(oneByte);
+                }
+                if (newLineDetected) lastline = '';
+            } else
+            if (5 == state) {
+                if (newLineDetected)
+                    state = 1;
+            }
+        }
+        return allParts;
+    };
+
+
+    //  read the boundary from the content-type header sent by the http client
+    //  this value may be similar to:
+    //  'multipart/form-data; boundary=----WebKitFormBoundaryvm5A9tzU1ONaGP5B',
+    getBoundary(header) {
+        let items = header.split(';');
+        if (items)
+            for (let i = 0; i < items.length; i++) {
+                let item = (new String(items[i])).trim();
+                if (item.startsWith('boundary=')) {
+                    let k = item.split('=');
+                    return (new String(k[1])).trim();
+                }
+            }
+        return "";
+    }
+
 }

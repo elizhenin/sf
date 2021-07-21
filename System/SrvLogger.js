@@ -12,7 +12,10 @@ module.exports = {
     "error": function (req, err) {
         let currDate = new Date();
         currDate = toRuTimeString(currDate) + ' ' + toRuDateString(currDate);
-        let row = req.connection.remoteAddress + ' (' + req.headers['x-forwarded-for'] + ')  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + '\n';
+        let row = "";
+        try {
+            row = req.connection.remoteAddress + ' (' + req.headers['x-forwarded-for'] + ')  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + '\n';
+        } catch (e) {}
         row += err + '\n';
         row += JSON.stringify(req.params) + '\n';
         row += '\n';
