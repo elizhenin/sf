@@ -75,7 +75,8 @@ let RequestHandler = class {
 
         //cookies
         let cookies = {}
-        let cookies_text = this.req.headers.cookie.trim();
+        let cookies_text;
+        if (this.req.headers.cookie) cookies_text = this.req.headers.cookie.trim();
         if (cookies_text) {
             let pairs = cookies_text.split(';');
             pairs.forEach(function (pair) {
