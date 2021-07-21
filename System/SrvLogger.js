@@ -5,7 +5,7 @@ module.exports = {
     "access": function (req) {
         let currDate = new Date();
         currDate = toRuTimeString(currDate) + ' ' + toRuDateString(currDate);
-        let row = req.connection.remoteAddress + ' (' + req.headers['x-forwarded-for'] + ')   [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + ' ' + req.headers['user-agent'] + '\n';
+        let row = req.ip + '  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + ' ' + req.headers['user-agent'] + '\n';
         Application.lib.fs.appendFile(this.access_file, row, (err) => {});
     },
 
@@ -14,7 +14,7 @@ module.exports = {
         currDate = toRuTimeString(currDate) + ' ' + toRuDateString(currDate);
         let row = "";
         try {
-            row = req.connection.remoteAddress + ' (' + req.headers['x-forwarded-for'] + ')  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + '\n';
+            row = req.ip +'  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + '\n';
         } catch (e) {}
         row += err + '\n';
         row += JSON.stringify(req.params) + '\n';

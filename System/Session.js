@@ -30,7 +30,7 @@ module.exports = {
         let id;
         if (typeof req.cookies[Application.System.Session._cookieName] != "undefined") {
             id = req.cookies[Application.System.Session._cookieName];
-        } else id =  Date.now() + "_" +md5(Date.now() + "_" +req.connection.remoteAddress);
+        } else id =  Date.now() + "_" +md5(Date.now() + "_" +req.ip);
         let maxAge = 1000 * 60 * 15;
         try {
             if(Application.config.Session.CookieMaxAge != undefined)maxAge =Application.config.Session.CookieMaxAge;

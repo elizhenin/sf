@@ -9,6 +9,9 @@ module.exports = class {
             ActiveListeners++;
             Application.System.SrvLogger.access(req);
             if (ActiveListeners <= MaxListeners) {
+                req.ip = req.headers['x-forwarded-for'] ||
+                    req.socket.remoteAddress ||
+                    null;
                 let Handler = new RequestHandler(req, res);
                 //parse body
                 await Handler.body_parser();
@@ -126,7 +129,7 @@ let RequestHandler = class {
                     });
                 }
                 await worker();
-                
+
             }
         }
         return result;
