@@ -1,12 +1,10 @@
 let InternalAPI = {
     injectClientApiScript(controller) {
-        controller.result = controller.result.split('<head>').join(`<head>\n<script type="application/javascript" src="/@sf-internal-api/${controller._controller.split('.').join('/')}"></script>`);
+        controller.result = controller.result.split('<head>').join(`<head>\n<script type="application/javascript" src="/@sf-internal-api/${controller._controller}"></script>`);
     },
 
     async generateClientApiScript(controller) {
-        const {
-            minify
-        } = require("terser");
+        let minify = Application.lib.terser.minify;
 
         let clientMethods = [];
         let serverMethods = [];
@@ -95,8 +93,14 @@ let InternalAPI = {
                 }
             }
 
-            let action = req.headers['sf-internal-api-action'];
-            let controller = req.path.split('@sf-internal-api')[1].split('/').join('.').substr(1);
+            let call = req.body;
+            call = CryptoJS.AES.decrypt(call, req.headers['sf-internal-api-token']);
+            call = call.toString(CryptoJS.enc.Utf8);
+            call = call.split("|");
+            let action = call[0];
+            let arg = JSON.parse(call[1]);
+
+            let controller = req.path.split('@sf-internal-api')[1].substr(1);
             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
             _Controller = new _Controller(req, res, controller, action);
             //1
@@ -107,10 +111,6 @@ let InternalAPI = {
                 SomeError = "Application.Controller." + controller + "._before() causes problem " + " [" + e + "]";
             }
 
-            let arg = req.body.arg;
-            arg = CryptoJS.AES.decrypt(arg, req.headers['sf-internal-api-token']);
-            arg = arg.toString(CryptoJS.enc.Utf8);
-            arg = JSON.parse(arg);
             //2
             try {
                 result = {
@@ -140,14 +140,14 @@ let SF_servercall = async function (method, arg) {
     for (let i = 0; i < arg.length; i++)
         _arg.push(arg[i]);
     _arg = JSON.stringify(_arg);
+    _arg = method+"|"+_arg;
     _arg = CryptoJS.AES.encrypt(_arg, '{{apiToken}}').toString();
     let P = new Promise(function (resolve, reject) {
         let xhr = new XMLHttpRequest();
         xhr.open('post', "/@sf-internal-api/{{Controller}}");
-        xhr.setRequestHeader('content-type', 'application/json');
+        xhr.setRequestHeader('content-type', 'text/plain');
         xhr.setRequestHeader('sf-internal-api-request', 'true');
         xhr.setRequestHeader('sf-internal-api-token', '{{apiToken}}');
-        xhr.setRequestHeader('sf-internal-api-action', method);
         xhr.onload = function () {
             let response = JSON.parse(this.responseText);
             if (response.status == 'error') {
@@ -169,9 +169,7 @@ let SF_servercall = async function (method, arg) {
             console.log(e)
         };
         try {
-            xhr.send(JSON.stringify({
-                arg: _arg
-            }));
+            xhr.send(_arg);
         } catch (e) {
             console.log(e)
         }

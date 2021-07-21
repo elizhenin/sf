@@ -224,6 +224,13 @@ let RequestHandler = class {
                     result = JSON.parse(body)
                 } catch (e) {}
                 return result
+            },
+            "text/plain": function (body) {
+                let result = false;
+                try {
+                    result = body.toString()
+                } catch (e) {}
+                return result
             }
         }
         let ContentType = this.req.headers['content-type'];
@@ -249,7 +256,7 @@ module.exports = class {
     constructor() {
         let MaxListeners = Application.config.Server.MaxListeners * 1;
         let ActiveListeners = 0;
-        
+
         this.ListenPort = Application.config.Server.Port * 1;
 
         this.server = Application.lib.http.createServer(async function (req, res) {
