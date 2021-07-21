@@ -96,7 +96,7 @@
                 }
 
                 //start listening
-                Application.HTTP = new Application.System.HTTP();
+                Application.HTTP = new Application.System.Routes();
                 Application.Scheduler.init();
 
             } else setTimeout(_continueInit, 100);
