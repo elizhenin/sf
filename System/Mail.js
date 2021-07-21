@@ -5,11 +5,11 @@ module.exports = class {
           this.View = function (view_path) {
             return new Application.System.MarkerScript(view_path, {}, {});
         };
-        this.transporter = Application.lib.nodemailer.createTransport(config[m_config]);
+        this.transporter = Application.lib.nodemailer.createTransport(Application.mailer[m_config]);
     }
     async send(to, subject, html, attachments) {
         let mailOptions = {
-            sender: config[m_config].auth.user,
+            sender: Application.mailer[m_config].auth.user,
             to: to,
             subject: subject,
             html: html,
