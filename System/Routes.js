@@ -113,15 +113,19 @@ let RequestHandler = class {
             }
             if (result) {
                 let res = this.res;
-                this.res.writeHead(200, {
-                    'Content-Type': ext_to_mime(filepath.split('.').reverse()[0]),
-                    'Content-Length': stat.size
-                });
-                let readStream = Application.lib.fs.createReadStream(filepath);
-                readStream.pipe(res);
-                readStream.on('end', function () {
-                    res.end();
-                });
+                async function worker() {
+                    res.writeHead(200, {
+                        'Content-Type': ext_to_mime(filepath.split('.').reverse()[0]),
+                        'Content-Length': stat.size
+                    });
+                    let readStream = Application.lib.fs.createReadStream(filepath);
+                    readStream.pipe(res);
+                    readStream.on('end', function () {
+                        res.end();
+                    });
+                }
+                await worker();
+                
             }
         }
         return result;
@@ -129,7 +133,6 @@ let RequestHandler = class {
 
     async router() {
         let URL = this.req.path;
-
         //detect domain name match
         let domains = Object.keys(Application.routes);
         let domainsRoutes = false;
@@ -325,7 +328,7 @@ let RequestHandler = class {
             });
             body = await P;
             body = await parsers[ContentType](body, ContentTypeParams);
-         }
+        }
         this.req.body = body;
     }
 }
@@ -1532,7 +1535,7 @@ let multipartFormParser = class {
             //	 part: 'AAAABBBB' }
             // into this one:
             // { filename: 'A.txt', type: 'text/plain', data: <Buffer 41 41 41 41 42 42 42 42> }
-            let obj = function (n='') {
+            let obj = function (n = '') {
                 let o, k, a, b;
                 k = n.split('=');
                 a = k[0].trim();
@@ -1548,7 +1551,7 @@ let multipartFormParser = class {
             file['data'] = Buffer.from(part.part);
 
             let fieldName = JSON.parse(header[1].split('=')[1].trim());
-            return [fieldName,file];
+            return [fieldName, file];
         }
 
         let lastline = '';
@@ -1598,7 +1601,7 @@ let multipartFormParser = class {
                         info: info,
                         part: part
                     };
-                    let [fieldName,readyPart] = process(p);
+                    let [fieldName, readyPart] = process(p);
                     allParts[fieldName] = readyPart;
                     // allParts.push(process(p));
                     buffer = [];
