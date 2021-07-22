@@ -12,27 +12,39 @@ module.exports = class {
                 req.ip = req.headers['x-forwarded-for'] ||
                     req.socket.remoteAddress ||
                     null;
+                    res.redirect = function(url){
+                        this.statusCode = 302;
+                        this.setHeader(
+                            'Location', url
+                          )
+                    }
                 let Handler = new RequestHandler(req, res);
                 //parse body
                 await Handler.body_parser();
 
                 //apply middlewares
-                await Handler.middlewares();
+                if(!res.finished) await Handler.middlewares();
 
                 //try to send static file
-                if (await Handler.static()) {
+                if(!res.finished) if (await Handler.static()) {
                     //static found and sended
                 } else {
                     //static not found
                     await Handler.router();
 
                     if (!Handler.Error) { //all ok
-                        if (!res.headersSent) res.end(Handler.result);
+                        let result = Handler.result;
+                        if(typeof result != "string"){
+                            if(Buffer.isBuffer(result)){
+                                result = result.toString();
+                            }else result = JSON.stringify(result);
+                        }
+                        if(!res.finished) res.end(result);
                         Application.System.SrvLogger.access(req);
                     } else { //errors found
                         console.log(Handler.Error.toString())
                         Application.System.SrvLogger.error(req, Handler.Error);
-                        res.end(Handler.Error);
+                        if(!res.finished) res.end(Handler.Error);
                     }
                 }
             } else {
@@ -80,7 +92,9 @@ let RequestHandler = class {
         if (cookies_text) {
             let pairs = cookies_text.split(';');
             pairs.forEach(function (pair) {
-                let [key, value] = pair.split('=');
+                let dirty = pair.split('=').reverse();
+                let key = dirty.pop();
+                let value = dirty.reverse().join('=');
                 key = decodeURIComponent(key.trim());
                 value = decodeURIComponent(value.trim());
                 cookies[key] = value;
@@ -98,6 +112,7 @@ let RequestHandler = class {
                     await OneMiddleware(this.req, this.res);
                 } catch (e) {
                     this.Error = "Application.Middleware." + middleware_name + "() causes problem " + " [" + e + "]";
+                    console.log(e)
                 }
             }
         }
@@ -249,6 +264,7 @@ let RequestHandler = class {
             } catch (e) {
                 //found error on controller._before stage
                 this.Error = "Application.Controller." + Controller + "._before() causes problem " + " [" + e + "]";
+                console.log(e)
             }
 
             //2
@@ -257,6 +273,7 @@ let RequestHandler = class {
             } catch (e) {
                 //found error on controller.action stage
                 this.Error = "Application.Controller." + Controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
+                console.log(e)
             }
             //3
             try {
@@ -264,6 +281,7 @@ let RequestHandler = class {
             } catch (e) {
                 //found error on controller._after stage
                 this.Error = "Application.Controller." + Controller + "._after() causes problem " + " [" + e + "]";
+                console.log(e)
             }
 
         } else {
@@ -306,9 +324,8 @@ let RequestHandler = class {
                 return result
             },
             "multipart/form-data": async function (body, ContentTypeParams) {
-                let multipart = new multipartFormParser();
-                let boundary = multipart.getBoundary(ContentTypeParams);
-                let parts = multipart.Parse(body, boundary);
+                let multipart = new multipartFormParser(ContentTypeParams);
+                let parts = multipart.Parse(body);
                 return parts;
             }
         }
@@ -340,7 +357,7 @@ let RequestHandler = class {
 
 
 let ext_to_mime = function (ext) {
-    let result = "text/plain";
+    let result = "text/plain; charset=utf-8";
     ext = ext.toString().toLowerCase();
     let mime = {
         "123": "application/vnd.lotus-1-2-3",
@@ -484,7 +501,7 @@ let ext_to_mime = function (ext) {
         "cod": "application/vnd.rim.cod",
         "coffee": "text/coffeescript",
         "com": "application/x-msdownload",
-        "conf": "text/plain",
+        "conf": "text/plain; charset=utf-8",
         "cpio": "application/x-cpio",
         "cpp": "text/x-c",
         "cpt": "application/mac-compactpro",
@@ -519,7 +536,7 @@ let ext_to_mime = function (ext) {
         "ddf": "application/vnd.syncml.dmddf+xml",
         "dds": "image/vnd.ms-dds",
         "deb": "application/x-debian-package",
-        "def": "text/plain",
+        "def": "text/plain; charset=utf-8",
         "deploy": "application/octet-stream",
         "der": "application/x-x509-ca-cert",
         "dfac": "application/vnd.dreamfactory",
@@ -702,8 +719,8 @@ let ext_to_mime = function (ext) {
         "hsj2": "image/hsj2",
         "htc": "text/x-component",
         "htke": "application/vnd.kenameaapp",
-        "htm": "text/html",
-        "html": "text/html",
+        "htm": "text/html; charset=utf-8",
+        "html": "text/html; charset=utf-8",
         "hvd": "application/vnd.yamaha.hv-dic",
         "hvp": "application/vnd.yamaha.hv-voice",
         "hvs": "application/vnd.yamaha.hv-script",
@@ -725,8 +742,8 @@ let ext_to_mime = function (ext) {
         "img": "application/octet-stream",
         "imp": "application/vnd.accpac.simply.imp",
         "ims": "application/vnd.ms-ims",
-        "in": "text/plain",
-        "ini": "text/plain",
+        "in": "text/plain; charset=utf-8",
+        "ini": "text/plain; charset=utf-8",
         "ink": "application/inkml+xml",
         "inkml": "application/inkml+xml",
         "install": "application/x-install-instructions",
@@ -764,11 +781,11 @@ let ext_to_mime = function (ext) {
         "jph": "image/jph",
         "jpm": "video/jpm",
         "jpx": "image/jpx",
-        "js": "application/javascript",
-        "json": "application/json",
-        "json5": "application/json5",
-        "jsonld": "application/ld+json",
-        "jsonml": "application/jsonml+json",
+        "js": "application/javascript; charset=utf-8",
+        "json": "application/json; charset=utf-8",
+        "json5": "application/json5; charset=utf-8",
+        "jsonld": "application/ld+json; charset=utf-8",
+        "jsonml": "application/jsonml+json; charset=utf-8",
         "jsx": "text/jsx",
         "jxr": "image/jxr",
         "jxra": "image/jxra",
@@ -807,12 +824,12 @@ let ext_to_mime = function (ext) {
         "lgr": "application/lgr+xml",
         "lha": "application/x-lzh-compressed",
         "link66": "application/vnd.route66.link66+xml",
-        "list": "text/plain",
+        "list": "text/plain; charset=utf-8",
         "list3820": "application/vnd.ibm.modcap",
         "listafp": "application/vnd.ibm.modcap",
         "litcoffee": "text/coffeescript",
         "lnk": "application/x-ms-shortcut",
-        "log": "text/plain",
+        "log": "text/plain; charset=utf-8",
         "lostxml": "application/lost+xml",
         "lrf": "application/octet-stream",
         "lrm": "application/vnd.ms-lrm",
@@ -843,7 +860,7 @@ let ext_to_mime = function (ext) {
         "maker": "application/vnd.framemaker",
         "man": "text/troff",
         "manifest": "text/cache-manifest",
-        "map": "application/json",
+        "map": "application/json; charset=utf-8",
         "mar": "application/octet-stream",
         "markdown": "text/markdown",
         "mathml": "application/mathml+xml",
@@ -1182,7 +1199,7 @@ let ext_to_mime = function (ext) {
         "shar": "application/x-shar",
         "shex": "text/shex",
         "shf": "application/shf+xml",
-        "shtml": "text/html",
+        "shtml": "text/html; charset=utf-8",
         "sid": "image/x-mrsid-image",
         "sieve": "application/sieve",
         "sig": "application/pgp-signature",
@@ -1275,7 +1292,7 @@ let ext_to_mime = function (ext) {
         "tex": "application/x-tex",
         "texi": "application/x-texinfo",
         "texinfo": "application/x-texinfo",
-        "text": "text/plain",
+        "text": "text/plain; charset=utf-8",
         "tfi": "application/thraud+xml",
         "tfm": "application/x-tex-tfm",
         "tfx": "image/tiff-fx",
@@ -1303,7 +1320,7 @@ let ext_to_mime = function (ext) {
         "twds": "application/vnd.simtech-mindmapper",
         "txd": "application/vnd.genomatix.tuxedo",
         "txf": "application/vnd.mobius.txf",
-        "txt": "text/plain",
+        "txt": "text/plain; charset=utf-8",
         "u32": "application/x-authorware-bin",
         "u8dsn": "message/global-delivery-status",
         "u8hdr": "message/global-headers",
@@ -1519,53 +1536,29 @@ let ext_to_mime = function (ext) {
 let multipartFormParser = class {
     /**
      	Multipart Parser (Finite State Machine)
-    	usage:
-    	var multipart = require('./multipart.js');
-    	var body = multipart.DemoData(); 							   // raw body
-    	var body = new Buffer(event['body-json'].toString(),'base64'); // AWS case
-    	
-    	var boundary = multipart.getBoundary(event.params.header['content-type']);
-    	var parts = multipart.Parse(body,boundary);
-    	
-    	// each part is:
-    	// { filename: 'A.txt', type: 'text/plain', data: <Buffer 41 41 41 41 42 42 42 42> }
-    	author:  Cristian Salazar (christiansalazarh@gmail.com) www.chileshift.cl
-    			 Twitter: @AmazonAwsChile
+        Author:  Cristian Salazar (christiansalazarh@gmail.com) www.chileshift.cl
+        Modified to class-style by Evgeny Lizhenin (elizhenin@gmail.com)
+    
      */
-    Parse(multipartBodyBuffer, boundary) {
-        let process = function (part) {
-            // will transform this object:
-            // { header: 'Content-Disposition: form-data; name="uploads[]"; filename="A.txt"',
-            //	 info: 'Content-Type: text/plain',
-            //	 part: 'AAAABBBB' }
-            // into this one:
-            // { filename: 'A.txt', type: 'text/plain', data: <Buffer 41 41 41 41 42 42 42 42> }
-            let obj = function (n = '') {
-                let o, k, a, b;
-                k = n.split('=');
-                a = k[0].trim();
-                b = JSON.parse(k[1].trim());
-                o = {};
-                o[a] = b;
-                return o;
+    constructor(header){
+        let items = header.split(';');
+        if (items)
+            for (let i = 0; i < items.length; i++) {
+                let item = (new String(items[i])).trim();
+                if (item.startsWith('boundary=')) {
+                    let k = item.split('=');
+                    this.boundary = (new String(k[1])).trim();
+                }
             }
-            let header = part.header.split(';');
-            let file = obj(header[2]);
-            let contentType = part.info.split(':')[1].trim();
-            file['type'] = contentType;
-            file['data'] = Buffer.from(part.part);
-
-            let fieldName = JSON.parse(header[1].split('=')[1].trim());
-            return [fieldName, file];
-        }
-
+    }
+    Parse(multipartBodyBuffer) {
         let lastline = '';
         let header = '';
         let info = '';
         let state = 0;
         let buffer = [];
         let allParts = {};
-
+        if (this.boundary)
         for (let i = 0; i < multipartBodyBuffer.length; i++) {
             let oneByte = multipartBodyBuffer[i];
             let prevByte = i > 0 ? multipartBodyBuffer[i - 1] : null;
@@ -1576,7 +1569,7 @@ let multipartFormParser = class {
                 lastline += String.fromCharCode(oneByte);
 
             if ((0 == state) && newLineDetected) {
-                if (("--" + boundary) == lastline) {
+                if (("--" + this.boundary) == lastline) {
                     state = 1;
                 }
                 lastline = '';
@@ -1597,8 +1590,8 @@ let multipartFormParser = class {
                 lastline = '';
             } else
             if (4 == state) {
-                if (lastline.length > (boundary.length + 4)) lastline = ''; // mem save
-                if (((("--" + boundary) == lastline))) {
+                if (lastline.length > (this.boundary.length + 4)) lastline = ''; // mem save
+                if (((("--" + this.boundary) == lastline))) {
                     let j = buffer.length - lastline.length;
                     let part = buffer.slice(0, j - 1);
                     let p = {
@@ -1606,9 +1599,8 @@ let multipartFormParser = class {
                         info: info,
                         part: part
                     };
-                    let [fieldName, readyPart] = process(p);
+                    let [fieldName, readyPart] = this._processPart(p);
                     allParts[fieldName] = readyPart;
-                    // allParts.push(process(p));
                     buffer = [];
                     lastline = '';
                     state = 5;
@@ -1624,24 +1616,27 @@ let multipartFormParser = class {
                     state = 1;
             }
         }
+
         return allParts;
     };
 
+    _processPart(part) {
+        let header = part.header.split(';');
+        let file = this._createObject(header[2]);
+        let contentType = part.info.split(':')[1].trim();
+        file['type'] = contentType;
+        file['data'] = Buffer.from(part.part);
+        let fieldName = JSON.parse(header[1].split('=')[1].trim());
+        return [fieldName, file];
+    }
 
-    //  read the boundary from the content-type header sent by the http client
-    //  this value may be similar to:
-    //  'multipart/form-data; boundary=----WebKitFormBoundaryvm5A9tzU1ONaGP5B',
-    getBoundary(header) {
-        let items = header.split(';');
-        if (items)
-            for (let i = 0; i < items.length; i++) {
-                let item = (new String(items[i])).trim();
-                if (item.startsWith('boundary=')) {
-                    let k = item.split('=');
-                    return (new String(k[1])).trim();
-                }
-            }
-        return "";
+    _createObject(pair = '') {
+        let newObj = {}, pairAsArray, key, value;
+        pairAsArray = pair.split('=');
+        key = pairAsArray[0].trim();
+        value = JSON.parse(pairAsArray[1].trim());
+        newObj[key] = value;
+        return newObj;
     }
 
 }

@@ -36,7 +36,7 @@ let InternalAPI = {
                 serverMethods.push(methodF);
             }
         })
-
+        controller.result = "";
         if (serverMethods.length + clientMethods.length > 0) {
             let serverCode = serverMethods.join(';\n');
 
@@ -54,6 +54,7 @@ let InternalAPI = {
             controller.result = (await minify(controller.result)).code;
             controller.result = this.CryptoJS + '\n' + controller.result;
             controller.res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            controller.res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
         }
     },
 
