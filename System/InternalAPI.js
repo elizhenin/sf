@@ -28,11 +28,11 @@ let InternalAPI = {
         let methods = collectMethods(tmp);
         methods.forEach(function (method) {
             if (method.startsWith('client_')) {
-                let methodF = eval(tmp[method]).toString().split('async client_').join('async function client_');
+                let methodF = 'async function client_'+eval(tmp[method]).toString().slice(('async client_').length);
                 clientMethods.push(methodF);
             }
             if (method.startsWith('server_')) {
-                let methodF = `window.${method} = async function(){return await SF_servercall("${method.split('server_')[1]}",arguments)}`;
+                let methodF = `window.${method} = async function(){return await SF_servercall("${method.slice(('server_').length)}",arguments)}`;
                 serverMethods.push(methodF);
             }
         })
