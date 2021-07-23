@@ -121,6 +121,7 @@ let InternalAPI = {
             } catch (e) {
                 //found error on controller.action stage
                 SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
+                console.log(e)
                 result = {
                     status: "error",
                     message: SomeError

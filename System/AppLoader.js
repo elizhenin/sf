@@ -25,7 +25,11 @@ module.exports = function (root) {
                             }
                         } catch (e) {
                             Application._appReady = false;
-                            console.log(`${filename} waiting retry [${e}]`)
+                            if ("TypeError: Class extends value undefined is not a constructor or null" == e.toString()) {
+                                console.log(`${filename} waiting retry [${e}]`)
+                            } else {
+                                console.log(e)
+                            }
                             setTimeout(_init, 100)
                         }
                     }
