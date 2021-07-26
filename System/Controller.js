@@ -26,13 +26,18 @@ module.exports = class {
         let {
             JSDOM
         } = Application.lib.jsdom;
-        try {
-            let document = new JSDOM(this.result);
-            this.result = document.serialize();
-            Application.System.InternalAPI.injectClientApiScript(this);
-        } catch (e) {
-            this.result = e.toString();
+
+        if(typeof this.result == "string") {
+            try {
+                let document = new JSDOM(this.result);
+                this.result = document.serialize();
+                console.log( this.result)
+                Application.System.InternalAPI.injectClientApiScript(this);
+            } catch (e) {
+                this.result = e.toString();
+            }
         }
+
         return this.result;
     }
 
