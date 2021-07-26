@@ -31,7 +31,6 @@ module.exports = class {
             try {
                 let document = new JSDOM(this.result);
                 this.result = document.serialize();
-                console.log( this.result)
                 Application.System.InternalAPI.injectClientApiScript(this);
             } catch (e) {
                 this.result = e.toString();
