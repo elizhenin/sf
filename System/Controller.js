@@ -26,7 +26,6 @@ module.exports = class {
         let {
             JSDOM
         } = Application.lib.jsdom;
-
         if(typeof this.result == "string") {
             try {
                 let document = new JSDOM(this.result);
@@ -36,9 +35,7 @@ module.exports = class {
                 this.result = e.toString();
             }
         }
-
         return this.result;
     }
-
 
 }

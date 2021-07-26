@@ -1073,4 +1073,7 @@ code.google.com/p/crypto-js/wiki/License
         u.AES = p._createHelper(d)
     })();
     /* end CryptoJS */
+    global.asyncSleep = function(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
 };

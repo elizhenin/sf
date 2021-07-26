@@ -17,6 +17,42 @@ module.exports = class extends Application.System.Controller {
     }
 
     async client_onload(){
-       await this.client_sampleBarFunction();
+       await client_sampleBarFunction();
+       //longpooling sample
+       let request_handler = async function(response){
+           console.log(response)
+       }
+       await client_Longpool(request_handler);
+
+    }
+
+    async server_Longpool(){
+        let result;
+        let result_ready = false;
+        let request_time = + Date.now();// behind the proxies with default 30s request timeout, periodically answer after 25s
+        while (+Date.now()-request_time < 25000 && !result_ready){//cycling data check
+            //looking for something ready to answer, delay in 5s in this example
+            if(+Date.now()-request_time > 5000){
+                result = "We ready to send some data";
+                result_ready = true;
+            }
+            //sleeping 100ms and retry looking for data
+            await asyncSleep(100);
+        }
+        return result;
+    }
+
+    async client_Longpool(callback){
+        //function that will await response 
+        let call = async function(){
+            //call server
+            let response = await server_Longpool();
+            //call callback with result
+            await callback(response);
+            //call self
+            client_Longpool(callback)
+        }
+        //call our caller in backgroud to avoid recursion stack overflow
+       return setTimeout(call, 100);
     }
 }
