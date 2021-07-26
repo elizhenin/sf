@@ -1,6 +1,6 @@
 module.exports = class extends Application.System.Controller {
     async _before(){
-        this.result = ""
+        this.result = "" //we dont use any html templates here, so it must be empty string
     }
      async action_index(){
          //similar to Welcome, but no template class or View using here. Only InternalAPI methods
