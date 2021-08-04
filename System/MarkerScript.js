@@ -22,7 +22,8 @@ module.exports = class MarkerScript {
         // key = value for replacement
         this._data = {};
 
-        this.req = req;this.res = res;
+        this.req = req;
+        this.res = res;
     }
 
     _aggregateMarkers() {
@@ -36,23 +37,32 @@ module.exports = class MarkerScript {
             //for execution priority - 'inc' blocks must be before 'for' and both them before static variables
             var inc_list = []
             var for_list = [];
+            var with_list = [];
             var other_list = [];
             this.markers.forEach(marker => {
-                if (marker.startsWith('include ')) {
-                    inc_list.push(marker);
-                } else {
-                    if (marker.startsWith('for ')) {
+                let command = marker.split(' ').reverse().pop();
+                switch(command){
+                    case 'include':{
+                        inc_list.push(marker);
+                        break;
+                    }
+                    case 'for':{
                         for_list.push(marker);
-                    } else {
+                        break;
+                    }
+                    case 'with':{
+                        with_list.push(marker);
+                        break;
+                    }
+                    default:{
                         other_list.push(marker);
                     }
                 }
             });
-            this.markers = inc_list.concat(
-                for_list.concat(
-                    other_list
-                )
-            );
+            this.markers = inc_list;
+            this.markers = this.markers.concat(for_list);
+            this.markers = this.markers.concat(with_list);
+            this.markers = this.markers.concat(other_list);
             inc_list = undefined;
             for_list = undefined;
             other_list = undefined;
@@ -100,10 +110,11 @@ module.exports = class MarkerScript {
             return result;
         }
 
-        try {
-            for (let markers_index in this.markers) {
-                let key = this.markers[markers_index]
 
+        for (let markers_index in this.markers) {
+           
+            try {
+                let key = this.markers[markers_index];
                 if (key.indexOf(' ') > -1) {
                     //command found
                     var command = key.split(' ');
@@ -127,7 +138,6 @@ module.exports = class MarkerScript {
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endif ' + command[1] + this.markerAfter);
                             var FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
-
                             if (typeof this._data[command[1]] != "undefined") {
                                 if (this._data[command[1]]) { //show block if true
                                     this.html = BeforeBlock + TrueBlock + AfterBlock;
@@ -187,7 +197,7 @@ module.exports = class MarkerScript {
 
                                 var block_list = '';
                                 for (let key in this._data[command[1]]) {
-                                    let View_Block = new MarkerScript(null,this.req,this.res);
+                                    let View_Block = new MarkerScript(null, this.req, this.res);
                                     View_Block.factory(CycleBlock);
                                     View_Block.data(this._data[command[1]][key]);
                                     block_list += await View_Block.value();
@@ -213,12 +223,11 @@ module.exports = class MarkerScript {
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
 
                             if (typeof this._data[command[1]] != "undefined") {
-                                let View_Block = new MarkerScript(null,this.req,this.res);
+                                let View_Block = new MarkerScript(null, this.req, this.res);
                                 View_Block.factory(CycleBlock);
                                 View_Block.data(this._data[command[1]]);
                                 this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                             }
-
                             break;
                         }
 
@@ -248,13 +257,15 @@ module.exports = class MarkerScript {
                                 }
                                 view_path = view_path.join('.');
                                 let view_exist = true;
-                                if (!Application.System.ObjSelector(Application.View, view_path)) {
+                                try {
+                                    Application.System.ObjSelector(Application.View, view_path)
+                                } catch (e) {
                                     view_exist = false;
                                 }
 
 
                                 if (view_exist) {
-                                    let View_Block = new MarkerScript(view_path,this.req,this.res);
+                                    let View_Block = new MarkerScript(view_path, this.req, this.res);
                                     View_Block.data(this._data);
                                     this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                                 } else {
@@ -262,7 +273,6 @@ module.exports = class MarkerScript {
                                 }
 
                             }
-
                             break;
                         }
 
@@ -271,7 +281,7 @@ module.exports = class MarkerScript {
                             /*
                             Syntax:
                             include Application.Library.SomeFunc
-                            ^^ means "await Application.Library.SomeFunc(this._data)"
+                            ^^ means "await Application.Library.SomeFunc(this.req, this.res, this._data)"
                             */
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
@@ -299,14 +309,18 @@ module.exports = class MarkerScript {
                 } else {
                     //its just a variable
                     try {
-                        if (this._data[key])
+                        if (typeof this._data[key] != "undefined")
                             this.html = this.html.split(this.markerBefore + key + this.markerAfter).join(this._data[key]);
                     } catch (e) {
                         ErrorCatcher(e);
                     }
                 }
+
+            } catch (e) {
+                ErrorCatcher(e)
             }
-        } catch (e) {}
+        }
+
         return this;
     };
 

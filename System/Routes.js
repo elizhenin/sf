@@ -269,7 +269,7 @@ let RequestHandler = class {
 
             //2
             try {
-                await _Controller['action_' + _Controller._action]();
+               if(!this.Error) await _Controller['action_' + _Controller._action]();
             } catch (e) {
                 //found error on controller.action stage
                 this.Error = "Application.Controller." + Controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
@@ -277,7 +277,7 @@ let RequestHandler = class {
             }
             //3
             try {
-                result = await _Controller._after();
+                if(!this.Error) result = await _Controller._after();
             } catch (e) {
                 //found error on controller._after stage
                 this.Error = "Application.Controller." + Controller + "._after() causes problem " + " [" + e + "]";
