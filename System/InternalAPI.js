@@ -44,7 +44,7 @@ let InternalAPI = {
 
             let clientCode = `${clientMethods.join(';\n')}\n${onloadCode}\n`;
 
-            let apiToken = controller.Session.get('sf-internal-api-token', md5(+Date.now()));
+            let apiToken = controller.Session.get('sf-internal-api-token', GUID());
             controller.Session.set('sf-internal-api-token', apiToken);
 
 
@@ -176,7 +176,7 @@ let SF_servercall = async function (method, arg) {
 }
 
 InternalAPI.SF_servercall = eval(SF_servercall).toString();
-let sysTools_setter = function () {
+let sysTools_adder = function () {
     if (typeof Application.System.sysTools != "undefined") {
         InternalAPI.sysTools = eval(Application.System.sysTools).toString() + '\nsysTools()\n';
         let minify = Application.lib.terser.minify;
@@ -184,10 +184,10 @@ let sysTools_setter = function () {
             InternalAPI.sysTools = result.code;
         })
     } else {
-        setTimeout(sysTools_setter, 100);
+        setTimeout(sysTools_adder, 100);
     }
 }
-sysTools_setter();
+sysTools_adder();
 
 
 module.exports = InternalAPI;

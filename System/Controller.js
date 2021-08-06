@@ -9,7 +9,7 @@ module.exports = class {
 
         //define context-specific View() function
         this.View = function (view_path) {
-            return new Application.System.MarkerScript(view_path, req, res);
+            return new Application.System.View(view_path, req, res);
         }
 
         //define session instance

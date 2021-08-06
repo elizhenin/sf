@@ -76,8 +76,8 @@
         }
 
         // System.View shortcut
-        if (typeof Application.System.MarkerScript != 'undefined') {
-            global['View'] = Application.System.MarkerScript;
+        if (typeof Application.System.View != 'undefined') {
+            global['View'] = Application.System.View;
         }
 
         //some useful functions
@@ -97,7 +97,7 @@
 
                 //start listening
                 Application.HTTP = new Application.System.Routes();
-                Application.Scheduler.init();
+                Application.Scheduler = new Application.System.Scheduler();
 
             } else setTimeout(_continueInit, 100);
         }
