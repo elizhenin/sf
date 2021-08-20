@@ -50,7 +50,7 @@ module.exports = class extends Application.System.Controller {
             //call callback with result
             await callback(response);
             //call self
-            client_Longpool(callback)
+            await client_Longpool(callback)
         }
         //call our caller in backgroud to avoid recursion stack overflow
        return setTimeout(call, 100);
