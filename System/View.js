@@ -27,7 +27,7 @@ module.exports = class MarkerScript {
     }
 
     _aggregateMarkers() {
-        var pattern = new RegExp('(' + this.markerBefore + ')(.+?)(' + this.markerAfter + ')', 'g');
+        let pattern = new RegExp('(' + this.markerBefore + ')(.+?)(' + this.markerAfter + ')', 'g');
         this.markers = this.html.match(pattern);
         try {
             for (i = 0; i < this.markers.length; i++) {
@@ -35,10 +35,10 @@ module.exports = class MarkerScript {
                 this.markers[i] = this.markers[i].split(this.markerAfter).join('');
             }
             //for execution priority - 'inc' blocks must be before 'for' and both them before static variables
-            var inc_list = []
-            var for_list = [];
-            var with_list = [];
-            var other_list = [];
+            let inc_list = []
+            let for_list = [];
+            let with_list = [];
+            let other_list = [];
             this.markers.forEach(marker => {
                 let command = marker.split(' ').reverse().pop();
                 switch(command){
@@ -92,9 +92,9 @@ module.exports = class MarkerScript {
     async parse() {
 
         let BeforeMarker = function (html, marker) {
-            var beginPos = 0;
-            var endPos = html.indexOf(marker);
-            var result = html;
+            let beginPos = 0;
+            let endPos = html.indexOf(marker);
+            let result = html;
             if (endPos > -1) {
                 result = html.slice(beginPos, endPos);
             }
