@@ -105,7 +105,7 @@ let RequestHandler = class {
 
     async middlewares() {
         Application.System.Session.middleware(this.req, this.res);
-        if (typeof Application.Middleware != "undefined") {
+        if (!empty(Application.Middleware)) {
             for (let middleware_name in Application.Middleware) {
                 let OneMiddleware = Application.Middleware[middleware_name];
                 try {
@@ -191,11 +191,11 @@ let RequestHandler = class {
                             let matched = match(URL);
                             if (matched) {
                                 //try to use Controller.action from route settings
-                                if (typeof route.controller != "undefined") Controller = route.controller;
-                                if (typeof route.action != "undefined") action = route.action;
+                                if (!empty(route.controller)) Controller = route.controller;
+                                if (!empty(route.action)) action = route.action;
                                 //try to use Controller.action from url params
-                                if (typeof matched.params.controller != "undefined") Controller = matched.params.controller;
-                                if (typeof matched.params.action != "undefined") action = matched.params.action;
+                                if (!empty(matched.params.controller)) Controller = matched.params.controller;
+                                if (!empty(matched.params.action)) action = matched.params.action;
                                 //add route params to req
                                 let params = {}
                                 Object.keys(matched.params).forEach(function (param) {
@@ -203,7 +203,7 @@ let RequestHandler = class {
                                 })
                                 this.req.params = params;
 
-                                if (typeof route.method != "undefined") {
+                                if (!empty(route.method)) {
                                     /* method is stricted - compare with request*/
                                     if (route.method.toLowerCase() == this.req.method.toLowerCase())
                                         await this.handler(Controller, action);
@@ -1527,7 +1527,7 @@ let ext_to_mime = function (ext) {
         "zirz": "application/vnd.zul",
         "zmm": "application/vnd.handheld-entertainment+xml"
     }
-    if (typeof mime[ext] != "undefined") {
+    if (!empty(mime[ext])) {
         result = mime[ext]
     }
     return result;

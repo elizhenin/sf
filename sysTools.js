@@ -12,7 +12,7 @@ module.exports = function sysTools() {
             if (null == v) type = "undefined";
             switch (type) {
                 case 'string': {
-                    if (v.length == 0) isEmpty = true;
+                    if (v.trim().length == 0) isEmpty = true;
                     break;
                 }
                 case 'number': {
@@ -410,23 +410,18 @@ module.exports = function sysTools() {
         };
         //other
         Context.GUID = function(){
-            //not as in RFC, but unique enough and correct in validators
+            //not as in RFC, but unique enough and correct in validators. JS is 53-bits integer timestamp and no MICROseconds available
             let guid = '';
-            //use random
-            guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            //prepare part using random
+            guid = '-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 var r = Math.random() * 16 | 0,
                     v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
-            //replace first part to timestamp in hex
-            guid = guid.split('-').reverse();
-            guid.pop();
-            guid.pop();
-            let timestamp = new Date().getTime();
-            timestamp = ('0'+timestamp.toString(16)).slice(-12);
-            guid.push(timestamp.slice(-4));
-            guid.push(timestamp.slice(0,8));
-            guid = guid.reverse().join('-');
+            //prepare timestamp in hex in pattern 'hhhhhhhh-hhhh-'
+            let timestamp = (function(S){return `${S.slice(0,8)}-${S.slice(-4)}`})(('0'+(+Date.now()).toString(16)).slice(-12));
+            //add timestamp to guid
+            guid = timestamp+guid;
             return guid;
         }
         /*

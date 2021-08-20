@@ -14,13 +14,13 @@ module.exports = {
     _storage: {},
     instance: class {
         constructor(session_id = '@') {
-            if (typeof Application.System.Session._storage[session_id] == 'undefined') Application.System.Session._storage[session_id] = {};
+            if (empty(Application.System.Session._storage[session_id])) Application.System.Session._storage[session_id] = {};
             this._storage = Application.System.Session._storage[session_id];
         }
 
         get(key, alt) {
             let result = alt;
-            if (typeof this._storage[key] != "undefined") result = this._storage[key];
+            if (!empty(this._storage[key])) result = this._storage[key];
             return result;
         }
 
@@ -34,7 +34,7 @@ module.exports = {
     middleware: function (req, res) {
         //called in Routes
         let session_id;
-        if (typeof req.cookies[Application.System.Session._cookieName] != "undefined") {
+        if (!empty(req.cookies[Application.System.Session._cookieName])) {
             session_id = req.cookies[Application.System.Session._cookieName];
         } else session_id = GUID();
     

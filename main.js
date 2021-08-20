@@ -8,8 +8,10 @@
     };
     //popularize with node_modules in lib branch
     Application.lib = {};
-    require('./npmlibs.js')
-    
+    require('./npmlibs.js');
+    //load sysTools
+    Application.sysTools = require('./sysTools.js');
+    Application.sysTools();
     //set up config parameters
     Application.config = {};
     /*
@@ -80,13 +82,10 @@
             global['View'] = Application.System.View;
         }
 
-        //some useful functions
-        Application.System.sysTools();
-
         //call AppLoader to load other MVC code
         Application._appReady = true;
         Application.System.AppLoader(Application);
-        
+
         let _continueInit = function () {
             if (Application._appReady) {
                 //set up databases

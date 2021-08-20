@@ -4,8 +4,8 @@ module.exports = class {
         //System tasks
 
         //Application tasks
-        if (typeof Application.Scheduler != "undefined") {
-            if (typeof Application.Scheduler.StartUp != "undefined") {
+        if (!empty(Application.Scheduler)) {
+            if (!empty(Application.Scheduler.StartUp)) {
                 //startup tasks
                 /*
                 each task is one async function without parameters
@@ -22,7 +22,7 @@ module.exports = class {
                     setTimeout(task_body, 0)
                 }
             }
-            if (typeof Application.Scheduler.Periodic != "undefined") {
+            if (!empty(Application.Scheduler.Periodic)) {
                 //periodic tasks
                  /*
                 each task is one object with two fields

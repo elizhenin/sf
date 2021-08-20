@@ -67,10 +67,11 @@ let InternalAPI = {
     },
     async ExecuteServerFunction(req, res) {
         let InternalAPIrequest = false;
+        let apiToken = false;
         if (req.headers['sf-internal-api-request'] == 'true') {
             let Session = new Application.System.Session.instance(req.cookies[Application.System.Session._cookieName]);
-            let apiToken = Session.get('sf-internal-api-token');
-            if (req.headers['sf-internal-api-token'] == apiToken) {
+            apiToken = Session.get('sf-internal-api-token',false);
+            if (!empty(apiToken)) {
                 InternalAPIrequest = true;
             }
         }
@@ -82,7 +83,7 @@ let InternalAPI = {
             //apply middlewares
             Application.System.Session.middleware(req, res);
 
-            if (typeof Application.Middleware != "undefined") {
+            if (!empty(Application.Middleware)) {
                 for (let middleware_name in Application.Middleware) {
                     let OneMiddleware = Application.Middleware[middleware_name];
                     try {
@@ -94,7 +95,7 @@ let InternalAPI = {
             }
 
             let call = req.body;
-            call = CryptoJS.AES.decrypt(call, req.headers['sf-internal-api-token']);
+            call = CryptoJS.AES.decrypt(call, apiToken);
             call = call.toString(CryptoJS.enc.Utf8);
             call = call.split("|");
             let action = call[0];
@@ -117,7 +118,7 @@ let InternalAPI = {
                     status: "success",
                     result: await _Controller['server_' + action](...arg)
                 };
-                result.result = CryptoJS.AES.encrypt(JSON.stringify(result.result), req.headers['sf-internal-api-token']).toString();
+                result.result = CryptoJS.AES.encrypt(JSON.stringify(result.result), apiToken).toString();
             } catch (e) {
                 //found error on controller.action stage
                 SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
@@ -145,7 +146,6 @@ let SF_servercall = async function (method, arg) {
         xhr.open('post', "/@sf-internal-api/{{Controller}}");
         xhr.setRequestHeader('content-type', 'text/plain');
         xhr.setRequestHeader('sf-internal-api-request', 'true');
-        xhr.setRequestHeader('sf-internal-api-token', '{{apiToken}}');
         xhr.onload = function () {
             let response = JSON.parse(this.responseText);
             if (response.status == 'error') {
@@ -177,8 +177,8 @@ let SF_servercall = async function (method, arg) {
 
 InternalAPI.SF_servercall = eval(SF_servercall).toString();
 let sysTools_adder = function () {
-    if (typeof Application.System.sysTools != "undefined") {
-        InternalAPI.sysTools = eval(Application.System.sysTools).toString() + '\nsysTools()\n';
+    if (!empty(Application.sysTools)) {
+        InternalAPI.sysTools = eval(Application.sysTools).toString() + '\nsysTools()\n';
         let minify = Application.lib.terser.minify;
         minify(InternalAPI.sysTools).then(function (result) {
             InternalAPI.sysTools = result.code;

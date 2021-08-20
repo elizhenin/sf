@@ -138,7 +138,7 @@ module.exports = class MarkerScript {
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endif ' + command[1] + this.markerAfter);
                             var FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
-                            if (typeof this._data[command[1]] != "undefined") {
+                            if (!empty(this._data[command[1]])) {
                                 if (this._data[command[1]]) { //show block if true
                                     this.html = BeforeBlock + TrueBlock + AfterBlock;
                                 } else { //show alt block if false
@@ -168,7 +168,7 @@ module.exports = class MarkerScript {
                             var FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'notis ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'notis ' + command[1] + this.markerAfter);
 
-                            if (typeof this._data[command[1]] != "undefined") {
+                            if (!empty(this._data[command[1]])) {
                                 if (this._data[command[1]] == command[2]) { //show block if true
                                     this.html = BeforeBlock + TrueBlock + AfterBlock;
                                 } else { //show alt block if false
@@ -193,7 +193,7 @@ module.exports = class MarkerScript {
                             var CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endfor ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endfor ' + command[1] + this.markerAfter);
 
-                            if (typeof this._data[command[1]] != "undefined") {
+                            if (!empty(this._data[command[1]])) {
 
                                 var block_list = '';
                                 for (let key in this._data[command[1]]) {
@@ -222,7 +222,7 @@ module.exports = class MarkerScript {
                             var CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
 
-                            if (typeof this._data[command[1]] != "undefined") {
+                            if (!empty(this._data[command[1]])) {
                                 let View_Block = new MarkerScript(null, this.req, this.res);
                                 View_Block.factory(CycleBlock);
                                 View_Block.data(this._data[command[1]]);
@@ -239,7 +239,7 @@ module.exports = class MarkerScript {
                             */
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
-                            if (typeof command[1] != "undefined") {
+                            if (!empty(command[1])) {
                                 /* variables syntax:
                                 ?var_name, if "?" found - look for var_name in data and replace
                                 */
@@ -249,22 +249,15 @@ module.exports = class MarkerScript {
                                     let part_var = path_part.split('?');
                                     if (part_var.length > 1) {
                                         for (let k in part_var) {
-                                            if (typeof this._data[part_var[k]] != "undefined")
+                                            if (!empty(this._data[part_var[k]]))
                                                 part_var[k] = this._data[part_var[k]].toString();
                                         }
                                     }
                                     view_path[i] = part_var.join('');
                                 }
                                 view_path = view_path.join('.');
-                                let view_exist = true;
-                                try {
-                                    Application.System.ObjSelector(Application.View, view_path)
-                                } catch (e) {
-                                    view_exist = false;
-                                }
-
-
-                                if (view_exist) {
+                              
+                                if (!empty(Application.System.ObjSelector(Application.View, view_path))) {
                                     let View_Block = new MarkerScript(view_path, this.req, this.res);
                                     View_Block.data(this._data);
                                     this.html = BeforeBlock + await View_Block.value() + AfterBlock;
@@ -280,12 +273,12 @@ module.exports = class MarkerScript {
                             //execute async function and put result in place
                             /*
                             Syntax:
-                            include Application.Library.SomeFunc
+                            widget Application.Library.SomeFunc
                             ^^ means "await Application.Library.SomeFunc(this.req, this.res, this._data)"
                             */
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
-                            if (typeof command[1] != "undefined") {
+                            if (!empty(command[1])) {
 
                                 let code_path = command[1];
                                 let code_exist = true;
@@ -309,7 +302,7 @@ module.exports = class MarkerScript {
                 } else {
                     //its just a variable
                     try {
-                        if (typeof this._data[key] != "undefined")
+                        if (!empty(this._data[key]))
                             this.html = this.html.split(this.markerBefore + key + this.markerAfter).join(this._data[key]);
                     } catch (e) {
                         ErrorCatcher(e);
