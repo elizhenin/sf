@@ -13,8 +13,8 @@ let InternalAPI = {
         let collectMethods = function (obj) {
             let result = []
             while (result.indexOf("__proto__") == -1) {
-                result = result.concat(Object.getOwnPropertyNames(obj));
                 obj = obj.__proto__;
+                result = result.concat(Object.getOwnPropertyNames(obj));
             }
             let _filter = {};
             result.forEach(item => {
