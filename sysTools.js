@@ -371,6 +371,37 @@ module.exports = function sysTools() {
             var time = d.getHours() + ":" + ("0" + d.getMinutes(2)).slice(-2);
             return time + ' ' + date;
         };
+        Context.struct2flat = function (S) {
+            let flat = {};
+    
+            function resolver(obj, path = "", root = false) {
+                if (Array.isArray(obj)) {
+    
+                    flat[path + '.length'] = obj.length;
+                    for (let i = 0; i < obj.length; i++) {
+                        let _path = path + '[' + i + ']';
+    
+                        resolver(obj[i], _path);
+                    }
+                } else {
+                    if (typeof obj == "object" && null!=obj) {
+                        let keys = Object.keys(obj);
+                        for (let i = 0; i < keys.length; i++) {
+                            let _path = path + (root ? '' : '.') + keys[i];
+                            resolver(obj[keys[i]], _path)
+                        }
+                    } else {
+                        if (root) flat = obj;
+                        else flat[path] = obj;
+                    }
+    
+                }
+            }
+    
+            resolver(S, '', true);
+    
+            return flat;
+        }
         Context.list2tree = function (list) {
             let map = {},
                 node, roots = [],
@@ -393,20 +424,8 @@ module.exports = function sysTools() {
             return roots;
         }
         Context.tree2list = function (tree) {
-            let list = {};
-            for (let key in tree) {
-                switch (typeof tree[key]) {
-                    case 'object': {
-                        let subtree = tree2list(tree[key]);
-                        for (let i in subtree) list[key + '.' + i] = subtree[i];
-                        break;
-                    }
-                    default: {
-                        list[key] = tree[key];
-                    }
-                }
-            }
-            return list;
+            //removed dublicated code. struct2flat do the same with more features
+            return struct2flat(tree);
         };
         //other
         Context.GUID = function(){
