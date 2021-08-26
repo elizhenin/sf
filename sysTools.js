@@ -25,7 +25,7 @@ module.exports = function sysTools() {
                     break;
                 }
                 case 'boolean': {
-                    isEmpty = v;
+                    isEmpty = !v;
                     break;
                 }
                 case 'undefined': {
