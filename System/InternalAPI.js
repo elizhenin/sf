@@ -97,9 +97,9 @@ let InternalAPI = {
             let call = req.body;
             call = CryptoJS.AES.decrypt(call, apiToken);
             call = call.toString(CryptoJS.enc.Utf8);
-            call = call.split("|");
-            let action = call[0];
-            let arg = JSON.parse(call[1]);
+            call = call.split("|").reverse();
+            let action = call.pop();
+            let arg = JSON.parse(call.reverse().join('|'));
 
             let controller = req.path.split('@sf-internal-api')[1].substr(1);
             let _Controller = Application.System.ObjSelector(Application.Controller, controller);
