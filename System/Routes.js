@@ -345,22 +345,24 @@ let RequestHandler = class {
         this.req.body = body;
     }
 
-    deflate(payload){
-        return new Promise(function(resolve,reject){
-            const deflate = Application.lib.zlib.deflate;
-            deflate(payload,function(err,result){
-                if(err){
-                    reject(err)
-                }
-                else resolve(result)
+    zlib = {
+        deflate(payload) {
+            return new Promise(function (resolve, reject) {
+                const deflate = Application.lib.zlib.deflate;
+                deflate(payload, function (err, result) {
+                    if (err) {
+                        reject(err)
+                    } else resolve(result)
+                })
             })
-        })
+        }
     }
+    
     async send(result = undefined) {
         if (empty(result)) result = this.result;
         let req = this.req;
         let res = this.res;
-       
+
         if (typeof result != "string") {
             if (Buffer.isBuffer(result)) {
                 result = result.toString();
@@ -370,28 +372,28 @@ let RequestHandler = class {
             let acceptEncoding = req.headers['accept-encoding'];
             if (!acceptEncoding) {
                 acceptEncoding = [];
-            }else{
+            } else {
                 acceptEncoding = acceptEncoding.split(',');
-                for(let i=0;i<acceptEncoding.length;i++){
+                for (let i = 0; i < acceptEncoding.length; i++) {
                     acceptEncoding[i] = acceptEncoding[i].trim().toLowerCase();
                 }
             }
 
             //  if(acceptEncoding.indexOf('br')){
-             
+
             //  }
             //  else
             //   if(acceptEncoding.indexOf('gzip')){
-             
+
             //  }
             //  else 
-             if(acceptEncoding.indexOf('deflate')){
-                result = await this.deflate(Buffer.from(result));
+            if (acceptEncoding.indexOf('deflate')) {
+                result = await this.zlib.deflate(Buffer.from(result));
                 this.res.setHeader(
                     'Content-Encoding', 'deflate'
                 )
-             }
-              
+            }
+
             res.end(result);
         }
     }
