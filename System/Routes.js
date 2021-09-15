@@ -2,7 +2,6 @@ module.exports = class {
     constructor() {
         let MaxListeners = Application.config.Server.MaxListeners * 1;
         let ActiveListeners = 0;
-
         this.ListenPort = Application.config.Server.Port * 1;
 
         this.server = Application.lib.http.createServer(async function (req, res) {
@@ -12,41 +11,33 @@ module.exports = class {
                 req.ip = req.headers['x-forwarded-for'] ||
                     req.socket.remoteAddress ||
                     null;
-                    res.redirect = function(url){
-                        this.statusCode = 302;
-                        this.setHeader(
-                            'Location', url
-                          )
-                    }
+                res.redirect = function (url) {
+                    this.statusCode = 302;
+                    this.setHeader(
+                        'Location', url
+                    )
+                }
                 let Handler = new RequestHandler(req, res);
                 //parse body
                 await Handler.body_parser();
-
                 //apply middlewares
-                if(!res.finished) await Handler.middlewares();
-
+                if (!res.writeableEnded) await Handler.middlewares();
                 //try to send static file
-                if(!res.finished) if (await Handler.static()) {
-                    //static found and sended
-                } else {
-                    //static not found
-                    await Handler.router();
-
-                    if (!Handler.Error) { //all ok
-                        let result = Handler.result;
-                        if(typeof result != "string"){
-                            if(Buffer.isBuffer(result)){
-                                result = result.toString();
-                            }else result = JSON.stringify(result);
+                if (!res.writeableEnded)
+                    if (await Handler.static()) {
+                        //static found and sended
+                    } else {
+                        //static not found
+                        await Handler.router();
+                        if (!Handler.Error) { //all ok
+                            await Handler.send();
+                            Application.System.SrvLogger.access(req);
+                        } else { //errors found
+                            console.log(Handler.Error.toString())
+                            Application.System.SrvLogger.error(req, Handler.Error);
+                            if (!res.writeableEnded) res.end(Handler.Error);
                         }
-                        if(!res.finished) res.end(result);
-                        Application.System.SrvLogger.access(req);
-                    } else { //errors found
-                        console.log(Handler.Error.toString())
-                        Application.System.SrvLogger.error(req, Handler.Error);
-                        if(!res.finished) res.end(Handler.Error);
                     }
-                }
             } else {
                 console.log(MaxListeners + ' exceeded');
                 Application.System.SrvLogger.error(req, MaxListeners + ' exceeded');
@@ -269,7 +260,7 @@ let RequestHandler = class {
 
             //2
             try {
-               if(!this.Error) await _Controller['action_' + _Controller._action]();
+                if (!this.Error) await _Controller['action_' + _Controller._action]();
             } catch (e) {
                 //found error on controller.action stage
                 this.Error = "Application.Controller." + Controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
@@ -277,7 +268,7 @@ let RequestHandler = class {
             }
             //3
             try {
-                if(!this.Error) result = await _Controller._after();
+                if (!this.Error) result = await _Controller._after();
             } catch (e) {
                 //found error on controller._after stage
                 this.Error = "Application.Controller." + Controller + "._after() causes problem " + " [" + e + "]";
@@ -352,6 +343,57 @@ let RequestHandler = class {
             body = await parsers[ContentType](body, ContentTypeParams);
         }
         this.req.body = body;
+    }
+
+    deflate(payload){
+        return new Promise(function(resolve,reject){
+            const deflate = Application.lib.zlib.deflate;
+            deflate(payload,function(err,result){
+                if(err){
+                    reject(err)
+                }
+                else resolve(result)
+            })
+        })
+    }
+    async send(result = undefined) {
+        if (empty(result)) result = this.result;
+        let req = this.req;
+        let res = this.res;
+       
+        if (typeof result != "string") {
+            if (Buffer.isBuffer(result)) {
+                result = result.toString();
+            } else result = JSON.stringify(result);
+        }
+        if (!res.writeableEnded) {
+            let acceptEncoding = req.headers['accept-encoding'];
+            if (!acceptEncoding) {
+                acceptEncoding = [];
+            }else{
+                acceptEncoding = acceptEncoding.split(',');
+                for(let i=0;i<acceptEncoding.length;i++){
+                    acceptEncoding[i] = acceptEncoding[i].trim().toLowerCase();
+                }
+            }
+
+            //  if(acceptEncoding.indexOf('br')){
+             
+            //  }
+            //  else
+            //   if(acceptEncoding.indexOf('gzip')){
+             
+            //  }
+            //  else 
+             if(acceptEncoding.indexOf('deflate')){
+                result = await this.deflate(Buffer.from(result));
+                this.res.setHeader(
+                    'Content-Encoding', 'deflate'
+                )
+             }
+              
+            res.end(result);
+        }
     }
 }
 
@@ -1540,7 +1582,7 @@ let multipartFormParser = class {
         Modified to class-style by Evgeny Lizhenin (elizhenin@gmail.com)
     
      */
-    constructor(header){
+    constructor(header) {
         let items = header.split(';');
         if (items)
             for (let i = 0; i < items.length; i++) {
@@ -1559,63 +1601,63 @@ let multipartFormParser = class {
         let buffer = [];
         let allParts = {};
         if (this.boundary)
-        for (let i = 0; i < multipartBodyBuffer.length; i++) {
-            let oneByte = multipartBodyBuffer[i];
-            let prevByte = i > 0 ? multipartBodyBuffer[i - 1] : null;
-            let newLineDetected = ((oneByte == 0x0a) && (prevByte == 0x0d)) ? true : false;
-            let newLineChar = ((oneByte == 0x0a) || (oneByte == 0x0d)) ? true : false;
+            for (let i = 0; i < multipartBodyBuffer.length; i++) {
+                let oneByte = multipartBodyBuffer[i];
+                let prevByte = i > 0 ? multipartBodyBuffer[i - 1] : null;
+                let newLineDetected = ((oneByte == 0x0a) && (prevByte == 0x0d)) ? true : false;
+                let newLineChar = ((oneByte == 0x0a) || (oneByte == 0x0d)) ? true : false;
 
-            if (!newLineChar)
-                lastline += String.fromCharCode(oneByte);
+                if (!newLineChar)
+                    lastline += String.fromCharCode(oneByte);
 
-            if ((0 == state) && newLineDetected) {
-                if (("--" + this.boundary) == lastline) {
-                    state = 1;
-                }
-                lastline = '';
-            } else
-            if ((1 == state) && newLineDetected) {
-                header = lastline;
-                state = 2;
-                lastline = '';
-            } else
-            if ((2 == state) && newLineDetected) {
-                info = lastline;
-                state = 3;
-                lastline = '';
-            } else
-            if ((3 == state) && newLineDetected) {
-                state = 4;
-                buffer = [];
-                lastline = '';
-            } else
-            if (4 == state) {
-                if (lastline.length > (this.boundary.length + 4)) lastline = ''; // mem save
-                if (((("--" + this.boundary) == lastline))) {
-                    let j = buffer.length - lastline.length;
-                    let part = buffer.slice(0, j - 1);
-                    let p = {
-                        header: header,
-                        info: info,
-                        part: part
-                    };
-                    let [fieldName, readyPart] = this._processPart(p);
-                    allParts[fieldName] = readyPart;
+                if ((0 == state) && newLineDetected) {
+                    if (("--" + this.boundary) == lastline) {
+                        state = 1;
+                    }
+                    lastline = '';
+                } else
+                if ((1 == state) && newLineDetected) {
+                    header = lastline;
+                    state = 2;
+                    lastline = '';
+                } else
+                if ((2 == state) && newLineDetected) {
+                    info = lastline;
+                    state = 3;
+                    lastline = '';
+                } else
+                if ((3 == state) && newLineDetected) {
+                    state = 4;
                     buffer = [];
                     lastline = '';
-                    state = 5;
-                    header = '';
-                    info = '';
-                } else {
-                    buffer.push(oneByte);
+                } else
+                if (4 == state) {
+                    if (lastline.length > (this.boundary.length + 4)) lastline = ''; // mem save
+                    if (((("--" + this.boundary) == lastline))) {
+                        let j = buffer.length - lastline.length;
+                        let part = buffer.slice(0, j - 1);
+                        let p = {
+                            header: header,
+                            info: info,
+                            part: part
+                        };
+                        let [fieldName, readyPart] = this._processPart(p);
+                        allParts[fieldName] = readyPart;
+                        buffer = [];
+                        lastline = '';
+                        state = 5;
+                        header = '';
+                        info = '';
+                    } else {
+                        buffer.push(oneByte);
+                    }
+                    if (newLineDetected) lastline = '';
+                } else
+                if (5 == state) {
+                    if (newLineDetected)
+                        state = 1;
                 }
-                if (newLineDetected) lastline = '';
-            } else
-            if (5 == state) {
-                if (newLineDetected)
-                    state = 1;
             }
-        }
 
         return allParts;
     };
@@ -1631,7 +1673,8 @@ let multipartFormParser = class {
     }
 
     _createObject(pair = '') {
-        let newObj = {}, pairAsArray, key, value;
+        let newObj = {},
+            pairAsArray, key, value;
         pairAsArray = pair.split('=');
         key = pairAsArray[0].trim();
         value = JSON.parse(pairAsArray[1].trim());
