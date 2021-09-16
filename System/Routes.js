@@ -131,7 +131,7 @@ let RequestHandler = class {
                 let req = this.req;
                 let fileExt = filepath.split('.').reverse()[0].toString().toLowerCase();
                 let encodeFile = this.encoding.check(req.headers['accept-encoding']) && (ResponseDeflateFiletypes.indexOf(fileExt) > -1);
-
+                if(!empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && (Application.config.HTTP.ResponseDeflateStaticFiles === "true");
                 async function worker() {
                     let headers = {
                         'Content-Type': ext_to_mime(fileExt),
