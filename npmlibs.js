@@ -10,4 +10,5 @@ Application.lib.terser = require('terser');
 //HTTP
 Application.lib.http = require('http');
 Application.lib.zlib = require('zlib');
+Application.lib.stream = require('stream');
 Application.lib['path-to-regexp'] = require('path-to-regexp');
