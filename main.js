@@ -70,7 +70,7 @@
             let dir_list = Application.lib.fs.readdirSync(Application.config.Directories.System)
             for (let i in dir_list) {
                 let item = dir_list[i];
-                if ("js" === item.split['.'].reverse()[0].toLowerCase()) {
+                if ("js" === item.split('.').reverse()[0].toLowerCase()) {
                     let ObjName = item.slice(0, -3); //remove ".js" symbols from end
                     //add this js to namespace
                     Application.System[ObjName] = require(Application.lib.path.join(Application.config.Directories.System, item));
