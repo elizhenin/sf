@@ -5,7 +5,7 @@ try {
 } catch (e) {}
 
 let CookieMaxAge = 900; //15 minutes
-if (!empty(Application.config.Session.CookieMaxAge)) CookieMaxAge = Application.config.Session.CookieMaxAge;
+if (!empty(Application.config.Session) && !empty(Application.config.Session.CookieMaxAge)) CookieMaxAge = Application.config.Session.CookieMaxAge;
 
 
 module.exports = {
@@ -16,8 +16,6 @@ module.exports = {
         constructor(session_id = '@') {
             if (empty(Application.System.Session._storage[session_id])) Application.System.Session._storage[session_id] = {};
             this._storage = Application.System.Session._storage[session_id];
-
-            Application.System.Session._lastAccess[session_id] = Date.now();
         }
 
         get(key, alt) {
@@ -48,13 +46,14 @@ module.exports = {
 }
 
 let CleanupInterval = 5000;
-if (!empty(Application.config.Session.CleanupInterval)) CleanupInterval = Application.config.Session.CleanupInterval;
+if (!empty(Application.config.Session) && !empty(Application.config.Session.CleanupInterval)) CleanupInterval = Application.config.Session.CleanupInterval;
 setInterval(function () {
     let now = Date.now();
     let end = CookieMaxAge * 1000;
     let sessions = Object.keys(Application.System.Session._lastAccess);
     let sessions_length = sessions.length;
     for (let i = 0; i < sessions_length; i++) {
+        let session = sessions[i];
         let age = now - Application.System.Session._lastAccess[session];
         if (age > end) {
             delete Application.System.Session._lastAccess[session];
