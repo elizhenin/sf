@@ -176,18 +176,14 @@ let SF_servercall = async function (method, arg) {
 }
 
 InternalAPI.SF_servercall = eval(SF_servercall).toString();
-let sysTools_adder = function () {
-    if (!empty(Application.sysTools)) {
-        InternalAPI.sysTools = eval(Application.sysTools).toString() + '\nsysTools()\n';
-        let minify = Application.lib.terser.minify;
-        minify(InternalAPI.sysTools).then(function (result) {
-            InternalAPI.sysTools = result.code;
-        })
-    } else {
-        setTimeout(sysTools_adder, 100);
-    }
+
+if (!empty(Application.sysTools)) {
+    InternalAPI.sysTools = eval(Application.sysTools).toString() + '\nsysTools()\n';
+    let minify = Application.lib.terser.minify;
+    minify(InternalAPI.sysTools).then(function (result) {
+        InternalAPI.sysTools = result.code;
+    })
 }
-sysTools_adder();
 
 
 module.exports = InternalAPI;
