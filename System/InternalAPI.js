@@ -12,7 +12,7 @@ let InternalAPI = {
 
         let collectMethods = function (obj) {
             let result = []
-            while (result.indexOf("__proto__") == -1) {
+            while (-1 === result.indexOf("__proto__")) {
                 obj = obj.__proto__;
                 result = result.concat(Object.getOwnPropertyNames(obj));
             }
@@ -68,7 +68,7 @@ let InternalAPI = {
     async ExecuteServerFunction(req, res) {
         let InternalAPIrequest = false;
         let apiToken = false;
-        if (req.headers['sf-internal-api-request'] == 'true') {
+        if ("true" === req.headers['sf-internal-api-request']) {
             let Session = new Application.System.Session.instance(req.cookies[Application.System.Session._cookieName]);
             apiToken = Session.get('sf-internal-api-token',false);
             if (!empty(apiToken)) {
@@ -148,10 +148,10 @@ let SF_servercall = async function (method, arg) {
         xhr.setRequestHeader('sf-internal-api-request', 'true');
         xhr.onload = function () {
             let response = JSON.parse(this.responseText);
-            if (response.status == 'error') {
+            if ("error" === response.status) {
                 reject(response.message)
             }
-            if (response.status == 'success') {
+            if ("success" === response.status) {
                 let result = response.result;
                 result = CryptoJS.AES.decrypt(result, '{{apiToken}}');
                 result = result.toString(CryptoJS.enc.Utf8);

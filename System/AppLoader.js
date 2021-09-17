@@ -12,7 +12,7 @@ module.exports = function (root) {
                 SubcollectionList.push(item);
                 rootNode[item] = {}
             } else {
-                if (item.substr(item.length - 3) == '.js') {
+                if ('js' === item.split('.').reverse()[0].toLowerCase()) {
                     let ObjName = item.slice(0, -3); //remove ".js" symbols from end
                     //add this js to namespace
                     let _init = function (firstTry = false) {
@@ -25,7 +25,7 @@ module.exports = function (root) {
                             }
                         } catch (e) {
                             Application._appReady = false;
-                            if ("TypeError: Class extends value undefined is not a constructor or null" == e.toString()) {
+                            if ("TypeError: Class extends value undefined is not a constructor or null" === e.toString()) {
                                 console.log(`${filename} waiting retry [${e}]`)
                             } else {
                                 console.log(e)
@@ -34,7 +34,7 @@ module.exports = function (root) {
                         }
                     }
                     _init(true);
-                } else if (item.substr(item.length - 5) == '.html') {
+                } else if ('html' === item.split('.').reverse()[0].toLowerCase()) {
                     let ObjName = item.slice(0, -5); //remove ".html" symbols from end
                     //add this html to namespace
                     rootNode[ObjName] = Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8');

@@ -26,7 +26,7 @@ module.exports = class {
         let {
             JSDOM
         } = Application.lib.jsdom;
-        if(typeof this.result == "string") {
+        if("string" === typeof this.result) {
             try {
                 let document = new JSDOM(this.result);
                 this.result = document.serialize();

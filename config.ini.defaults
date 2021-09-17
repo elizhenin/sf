@@ -1,3 +1,8 @@
+[Directories]
+Root=
+System=System
+App=App
+AppPublic=Public
 [Server]
 Port = 5000
 MaxListeners=100
@@ -10,10 +15,10 @@ from=noreply@example.com
 to=anybody@example.com
 subject=From my site
 [Session]
-#CookieMaxAge=
-#CookieName=
+CookieMaxAge=900
+CookieName=sf-session-id
 [HTTP]
 ResponseDeflate=true
-ResponseDeflateStaticFiles=false
+ResponseDeflateStaticFiles=true
 ResponseDeflateFiletypes=txt,js,json,html,htm,xml,svg,css
 

@@ -131,7 +131,7 @@ let RequestHandler = class {
                 let req = this.req;
                 let fileExt = filepath.split('.').reverse()[0].toString().toLowerCase();
                 let encodeFile = this.encoding.check(req.headers['accept-encoding']) && (ResponseDeflateFiletypes.indexOf(fileExt) > -1);
-                if(!empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && (Application.config.HTTP.ResponseDeflateStaticFiles === "true");
+                if (!empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && ("true" === Application.config.HTTP.ResponseDeflateStaticFiles);
                 async function worker() {
                     let headers = {
                         'Content-Type': ext_to_mime(fileExt),
@@ -189,10 +189,10 @@ let RequestHandler = class {
 
             //inject InternalAPI routes. GET for script, POST for execution
             if (URL.match(/\/@sf-internal-api(.*)/)) {
-                if (this.req.method.toLowerCase() == 'get') {
+                if ("get" === this.req.method.toLowerCase()) {
                     this.result = await Application.System.InternalAPI.injectRouteScriptGenerator(this.req, this.res) //handler
                 }
-                if (this.req.method.toLowerCase() == 'post') {
+                if ("post" === this.req.method.toLowerCase()) {
                     this.result = JSON.stringify(await Application.System.InternalAPI.ExecuteServerFunction(this.req, this.res)) //handler
                 }
             } else {
@@ -223,7 +223,7 @@ let RequestHandler = class {
 
                                 if (!empty(route.method)) {
                                     /* method is stricted - compare with request*/
-                                    if (route.method.toLowerCase() == this.req.method.toLowerCase())
+                                    if (route.method.toLowerCase() === this.req.method.toLowerCase())
                                         await this.handler(Controller, action);
                                 } /* method is not stricted */
                                 else await this.handler(Controller, action);
@@ -248,7 +248,7 @@ let RequestHandler = class {
                             }
                         }
                         Controller = _domainsRoutes + Controller;
-                        if (typeof Application.System.ObjSelector(Application.Controller, Controller) == "object") {
+                        if ("object" === typeof Application.System.ObjSelector(Application.Controller, Controller)) {
                             Controller += "." + action;
                             action = "index";
                         }
@@ -273,7 +273,7 @@ let RequestHandler = class {
 
         let result = false;
 
-        if (["undefined", "object"].indexOf(typeof Application.System.ObjSelector(Application.Controller, Controller)) == -1) {
+        if (-1 === ["undefined", "object"].indexOf(typeof Application.System.ObjSelector(Application.Controller, Controller))) {
             let _Controller = Application.System.ObjSelector(Application.Controller, Controller);
             _Controller = new _Controller(this.req, this.res, Controller, action);
             //1
@@ -306,7 +306,7 @@ let RequestHandler = class {
             this.Error = "Application.Controller." + Controller + " is undefined";
         }
 
-        if (typeof result == "object") result = JSON.stringify(result);
+        if ("object" === typeof result) result = JSON.stringify(result);
         this.result = result;
     }
 
@@ -411,7 +411,9 @@ let RequestHandler = class {
             } else result = JSON.stringify(result);
         }
         if (!res.writeableEnded) {
-            if (this.encoding.check(req.headers['accept-encoding'])) {
+            let encodeResponse = this.encoding.check(req.headers['accept-encoding']);
+            if (!empty(Application.HTTP.ResponseDeflate)) encodeResponse = encodeResponse && ("true" === Application.HTTP.ResponseDeflate);
+            if (encodeResponse) {
                 result = await this.encoding.deflate(Buffer.from(result));
                 this.res.setHeader(
                     'Content-Encoding', 'deflate'

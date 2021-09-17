@@ -4,9 +4,9 @@ try {
     if (tmp != undefined) _cookieName = tmp;
 } catch (e) {}
 
-let maxAge =  60 * 15;//15 minutes
+let maxAge = 60 * 15; //15 minutes
 try {
-    if (Application.config.Session.CookieMaxAge != undefined) maxAge = Application.config.Session.CookieMaxAge;
+    if (!empty(Application.config.Session.CookieMaxAge)) maxAge = Application.config.Session.CookieMaxAge;
 } catch (e) {}
 
 module.exports = {
@@ -37,7 +37,7 @@ module.exports = {
         if (!empty(req.cookies[Application.System.Session._cookieName])) {
             session_id = req.cookies[Application.System.Session._cookieName];
         } else session_id = GUID();
-    
+
         res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${session_id}; HttpOnly; Path=/;Max-Age=${maxAge}`);
 
         return true;

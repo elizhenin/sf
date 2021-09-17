@@ -14,7 +14,7 @@ module.exports = {
         currDate = toRuTimeString(currDate) + ' ' + toRuDateString(currDate);
         let row = "";
         try {
-            row = req.ip +'  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + '\n';
+            row = req.ip + '  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + '\n';
         } catch (e) {}
         row += err + '\n';
         row += JSON.stringify(req.params) + '\n';

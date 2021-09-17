@@ -8,13 +8,13 @@ function parse(string) {
 	let group
 	let match
 
-	for (let i = 0, len = lines.length; i !== len; i++) {
+	for (let i = 0, len = lines.length; len > i; i++) {
 		if (match = lines[i].match(REG_GROUP)) {
-			if (forbidden.indexOf(match[1]) == -1) {
+			if (-1 === forbidden.indexOf(match[1])) {
 				object[match[1]] = group = object[match[1]] || {};
 			}
 		} else if (group && (match = lines[i].match(REG_PROP))) {
-			if (forbidden.indexOf(match[1]) == -1) {
+			if (-1 === forbidden.indexOf(match[1])) {
 				group[match[1]] = match[2];
 			}
 		}

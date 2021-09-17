@@ -30,7 +30,6 @@
     Application.config.Directories.System = "System";
     Application.config.Directories.App = "App";
     Application.config.Directories.AppPublic = "Public";
-    Application.config.Directories.AppPublicSrc = "FrontSrc";
     for (key in Application.config.Directories) {
         Application.config.Directories[key] = Application.lib.path.join(Application._dirname, Application.config.Directories[key]);
     }
@@ -41,7 +40,7 @@
         var config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
         branch = Object.assign(branch, iniParser(config_text));
         config_text = undefined;
-        if (typeof branch['#INCLUDE'] != 'undefined') {
+        if ("undefined" !== typeof branch['#INCLUDE']) {
             for (key in branch['#INCLUDE']) {
                 branch[key] = {};
                 Application._ConfigLoader(branch[key], branch['#INCLUDE'][key]);
@@ -71,14 +70,17 @@
             let dir_list = Application.lib.fs.readdirSync(Application.config.Directories.System)
             for (let i in dir_list) {
                 let item = dir_list[i];
-                let ObjName = item.slice(0, -3); //remove ".js" symbols from end
-                //add this js to namespace
-                Application.System[ObjName] = require(Application.lib.path.join(Application.config.Directories.System, item));
+                if ("js" === item.split['.'].reverse()[0].toLowerCase()) {
+                    let ObjName = item.slice(0, -3); //remove ".js" symbols from end
+                    //add this js to namespace
+                    Application.System[ObjName] = require(Application.lib.path.join(Application.config.Directories.System, item));
+                }
+
             }
         }
 
         // System.View shortcut
-        if (typeof Application.System.View != 'undefined') {
+        if ("undefined" !== typeof Application.System.View) {
             global['View'] = Application.System.View;
         }
 
