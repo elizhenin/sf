@@ -185,5 +185,4 @@ if (!empty(Application.sysTools)) {
     })
 }
 
-
 module.exports = InternalAPI;

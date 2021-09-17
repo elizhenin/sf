@@ -133,13 +133,29 @@ let RequestHandler = class {
                 let encodeFile = this.encoding.check(req.headers['accept-encoding']) && (ResponseDeflateFiletypes.indexOf(fileExt) > -1);
                 if (!empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && ("true" === Application.config.HTTP.ResponseDeflateStaticFiles);
                 async function worker() {
+                    let ext_to_mime = function (ext) {
+                        let result = "text/plain; charset=utf-8";
+                        let mime = Application.System.MimeTypes;
+                        if (!empty(mime[ext])) {
+                            result = mime[ext]
+                        }
+                        return result;
+                    }
                     let headers = {
                         'Content-Type': ext_to_mime(fileExt),
-                        'Content-Length': stat.size,
-                        'Cache-Control': 'public, max-age=31536000'
+                        'Content-Length': stat.size
+                    }
+
+                    let StaticFilesCache = true;
+                    if(!empty(Application.config.HTTP.StaticFilesCache)) StaticFilesCache = StaticFilesCache && ("true" === Application.config.HTTP.StaticFilesCache);
+                    if(StaticFilesCache) {
+                        let StaticFilesCacheMaxAge = 31536000;
+                        if(!empty(Application.config.HTTP.StaticFilesCacheMaxAge)) StaticFilesCacheMaxAge = Application.config.HTTP.StaticFilesCacheMaxAge;
+                        headers['Cache-Control'] = 'public, max-age='+StaticFilesCacheMaxAge;
                     }
                     if (encodeFile) headers['Content-Encoding'] = 'deflate';
                     res.writeHead(200, headers);
+
                     if (encodeFile) {
                         let onError = function (err) {
                             if (err) {
@@ -422,16 +438,6 @@ let RequestHandler = class {
             res.end(result);
         }
     }
-}
-
-
-let ext_to_mime = function (ext) {
-    let result = "text/plain; charset=utf-8";
-    let mime = Application.System.MimeTypes;
-    if (!empty(mime[ext])) {
-        result = mime[ext]
-    }
-    return result;
 }
 
 let multipartFormParser = class {
