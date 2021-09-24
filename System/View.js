@@ -138,7 +138,7 @@ module.exports = class MarkerScript {
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endif ' + command[1] + this.markerAfter);
                             var FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
-                            if (!empty(this._data[command[1]])) {
+                            if ("undefined" != typeof this._data[command[1]]) {
                                 if (this._data[command[1]]) { //show block if true
                                     this.html = BeforeBlock + TrueBlock + AfterBlock;
                                 } else { //show alt block if false
