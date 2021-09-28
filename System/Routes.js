@@ -112,7 +112,7 @@ let RequestHandler = class {
     async static() {
         //preparing
         let ResponseDeflateFiletypes = "txt,js,json,html,htm,xml,svg";
-        if (!empty(Application.config.HTTP.ResponseDeflateFiletypes)) ResponseDeflateFiletypes = Application.config.HTTP.ResponseDeflateFiletypes;
+        if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflateFiletypes)) ResponseDeflateFiletypes = Application.config.HTTP.ResponseDeflateFiletypes;
         ResponseDeflateFiletypes = ResponseDeflateFiletypes.split(",");
         //working
         let result = false;
@@ -131,7 +131,7 @@ let RequestHandler = class {
                 let req = this.req;
                 let fileExt = filepath.split('.').reverse()[0].toString().toLowerCase();
                 let encodeFile = this.encoding.check(req.headers['accept-encoding']) && (ResponseDeflateFiletypes.indexOf(fileExt) > -1);
-                if (!empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && ("true" === Application.config.HTTP.ResponseDeflateStaticFiles);
+                if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && ("true" === Application.config.HTTP.ResponseDeflateStaticFiles);
                 async function worker() {
                     let ext_to_mime = function (ext) {
                         let result = "text/plain; charset=utf-8";
@@ -147,11 +147,11 @@ let RequestHandler = class {
                     }
 
                     let StaticFilesCache = true;
-                    if(!empty(Application.config.HTTP.StaticFilesCache)) StaticFilesCache = StaticFilesCache && ("true" === Application.config.HTTP.StaticFilesCache);
-                    if(StaticFilesCache) {
+                    if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.StaticFilesCache)) StaticFilesCache = StaticFilesCache && ("true" === Application.config.HTTP.StaticFilesCache);
+                    if (StaticFilesCache) {
                         let StaticFilesCacheMaxAge = 31536000;
-                        if(!empty(Application.config.HTTP.StaticFilesCacheMaxAge)) StaticFilesCacheMaxAge = Application.config.HTTP.StaticFilesCacheMaxAge;
-                        headers['Cache-Control'] = 'public, max-age='+StaticFilesCacheMaxAge;
+                        if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.StaticFilesCacheMaxAge)) StaticFilesCacheMaxAge = Application.config.HTTP.StaticFilesCacheMaxAge;
+                        headers['Cache-Control'] = 'public, max-age=' + StaticFilesCacheMaxAge;
                     }
                     if (encodeFile) headers['Content-Encoding'] = 'deflate';
                     res.writeHead(200, headers);
@@ -420,22 +420,26 @@ let RequestHandler = class {
         if (empty(result)) result = this.result;
         let req = this.req;
         let res = this.res;
-
         if (typeof result != "string") {
             if (Buffer.isBuffer(result)) {
                 result = result.toString();
             } else result = JSON.stringify(result);
         }
         if (!res.writeableEnded) {
-            let encodeResponse = this.encoding.check(req.headers['accept-encoding']);
-            if (!empty(Application.HTTP.ResponseDeflate)) encodeResponse = encodeResponse && ("true" === Application.HTTP.ResponseDeflate);
-            if (encodeResponse) {
-                result = await this.encoding.deflate(Buffer.from(result));
-                this.res.setHeader(
-                    'Content-Encoding', 'deflate'
-                )
+            if (empty(result)) {
+                res.end();
+            } else {
+                let encodeResponse = this.encoding.check(req.headers['accept-encoding']);
+                if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflate)) encodeResponse = encodeResponse && ("true" === Application.config.HTTP.ResponseDeflate);
+                if (encodeResponse) {
+                    result = await this.encoding.deflate(Buffer.from(result));
+                    this.res.setHeader(
+                        'Content-Encoding', 'deflate'
+                    )
+                }
+                res.end(result);
             }
-            res.end(result);
+
         }
     }
 }
