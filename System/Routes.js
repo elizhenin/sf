@@ -1,4 +1,4 @@
-module.exports = class {
+module.exports = class Routes{
     constructor() {
         let MaxListeners = Application.config.Server.MaxListeners * 1;
         let ActiveListeners = 0;
@@ -264,7 +264,7 @@ let RequestHandler = class {
                             }
                         }
                         Controller = _domainsRoutes + Controller;
-                        if ("object" === typeof Application.System.ObjSelector(Application.Controller, Controller)) {
+                        if ("object" === typeof ObjSelector(Application.Controller, Controller)) {
                             Controller += "." + action;
                             action = "index";
                         }
@@ -289,8 +289,8 @@ let RequestHandler = class {
 
         let result = false;
 
-        if (-1 === ["undefined", "object"].indexOf(typeof Application.System.ObjSelector(Application.Controller, Controller))) {
-            let _Controller = Application.System.ObjSelector(Application.Controller, Controller);
+        if (-1 === ["undefined", "object"].indexOf(typeof ObjSelector(Application.Controller, Controller))) {
+            let _Controller = ObjSelector(Application.Controller, Controller);
             _Controller = new _Controller(this.req, this.res, Controller, action);
             //1
             try {

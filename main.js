@@ -38,7 +38,7 @@
     Application._ConfigLoader = function (branch, filename) {
         let iniParser = require(Application.lib.path.join(Application.config.Directories.System, 'IniParser.js'));
         var config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
-        branch = Object.assign(branch, iniParser(config_text));
+        branch = Object.assign(branch, new iniParser(config_text));
         config_text = undefined;
         if ("undefined" !== typeof branch['#INCLUDE']) {
             for (key in branch['#INCLUDE']) {
@@ -79,14 +79,9 @@
             }
         }
 
-        // System.View shortcut
-        if ("undefined" !== typeof Application.System.View) {
-            global['View'] = Application.System.View;
-        }
-
         //call AppLoader to load other MVC code
         Application._appReady = true;
-        Application.System.AppLoader(Application);
+        new Application.System.AppLoader(Application);
 
         let _continueInit = function () {
             if (Application._appReady) {

@@ -1,5 +1,5 @@
 //basic Sukina Framework mail class
-module.exports = class {
+module.exports = class Mail{
     constructor(m_config = 'default') {
           //define context-specific View() function
           this.View = function (view_path) {

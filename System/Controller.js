@@ -1,5 +1,5 @@
 //basic Sukina Framework controller
-module.exports = class {
+module.exports = class Controller{
     constructor(req, res, current_controller, current_action) {
         this.req = req;
         this.res = res;

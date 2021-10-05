@@ -1,4 +1,4 @@
-module.exports = class {
+module.exports = class Scheduler{
     constructor() {
         this.Tasks = {};
         //System tasks

@@ -8,11 +8,11 @@ let CookieMaxAge = 900; //15 minutes
 if (!empty(Application.config.Session) && !empty(Application.config.Session.CookieMaxAge)) CookieMaxAge = Application.config.Session.CookieMaxAge;
 
 
-module.exports = {
-    _cookieName: _cookieName,
-    _storage: {},
-    _lastAccess: {},
-    instance: class {
+module.exports = class Session{
+    static _cookieName = _cookieName
+    static _storage = {}
+    static _lastAccess = {}
+    static instance = class {
         constructor(session_id = '@') {
             if (empty(Application.System.Session._storage[session_id])) Application.System.Session._storage[session_id] = {};
             this._storage = Application.System.Session._storage[session_id];
@@ -29,9 +29,9 @@ module.exports = {
             return value
         }
 
-    },
+    }
 
-    middleware: function (req, res) {
+    static middleware(req, res) {
         //called in Routes
         let session_id;
         if (!empty(req.cookies[Application.System.Session._cookieName])) {
@@ -44,6 +44,7 @@ module.exports = {
         return true;
     }
 }
+
 
 let CleanupInterval = 5000;
 if (!empty(Application.config.Session) && !empty(Application.config.Session.CleanupInterval)) CleanupInterval = Application.config.Session.CleanupInterval;

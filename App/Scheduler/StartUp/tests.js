@@ -1,3 +1,5 @@
+const MarkerScript = require("../../../System/View");
+
 module.exports = async function () {
     console.log('startup tests from Application.Scheduler.StartUp.tests.js')
     let testobject = {}
@@ -23,4 +25,6 @@ module.exports = async function () {
     let listed = struct2flat(testobject);
     console.log('Sample structure:', JSON.stringify(testobject, ' ', 2))
     console.log('Converted sample:', JSON.stringify(listed, ' ', 2));
+    let a = new MarkerScript()
+    console.log(a)
 }

@@ -3,7 +3,23 @@ module.exports = function sysTools() {
     if (typeof global != "undefined") Context = global;
     if (typeof window != "undefined") Context = window;
     if (Context) {
+        Context.ObjSelector = function (SourceObj, ClassPath, createIfUndefined = false) {
+            //recusive get object by class path "className1.className2.className3.[etc N times].."
+            let ClassPathArray = ClassPath.split('.');
+            let ObjSelected = SourceObj;
+            for (i = 0; i < ClassPathArray.length; i++) {
+                if ("undefined" === typeof ObjSelected[ClassPathArray[i]]) {
+                    if (createIfUndefined) ObjSelected[ClassPathArray[i]] = {};
+                    else {
+                        ObjSelected = undefined;
+                        break;
+                    }
+                }
 
+                ObjSelected = ObjSelected[ClassPathArray[i]];
+            }
+            return ObjSelected;
+        }
 
         //add some useful functions from php
         Context.empty = function (v) {

@@ -1,6 +1,6 @@
 // View parse with small scripting support
 
-module.exports = class MarkerScript {
+module.exports = class View {
 
     constructor(view_name = null, req = null, res = null) {
         // marker brackets:
@@ -12,7 +12,7 @@ module.exports = class MarkerScript {
         //for object
         if (view_name) {
             try {
-                this.html = Application.System.ObjSelector(Application.View, view_name);
+                this.html = ObjSelector(Application.View, view_name);
                 this._aggregateMarkers();
             } catch (e) {
                 throw new Error('View "' + view_name + '" not found')
@@ -197,7 +197,7 @@ module.exports = class MarkerScript {
 
                                 var block_list = '';
                                 for (let key in this._data[command[1]]) {
-                                    let View_Block = new MarkerScript(null, this.req, this.res);
+                                    let View_Block = new View(null, this.req, this.res);
                                     View_Block.factory(CycleBlock);
                                     View_Block.data(this._data[command[1]][key]);
                                     block_list += await View_Block.value();
@@ -223,7 +223,7 @@ module.exports = class MarkerScript {
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
 
                             if (!empty(this._data[command[1]])) {
-                                let View_Block = new MarkerScript(null, this.req, this.res);
+                                let View_Block = new View(null, this.req, this.res);
                                 View_Block.factory(CycleBlock);
                                 View_Block.data(this._data[command[1]]);
                                 this.html = BeforeBlock + await View_Block.value() + AfterBlock;
@@ -257,8 +257,8 @@ module.exports = class MarkerScript {
                                 }
                                 view_path = view_path.join('.');
                               
-                                if (!empty(Application.System.ObjSelector(Application.View, view_path))) {
-                                    let View_Block = new MarkerScript(view_path, this.req, this.res);
+                                if (!empty(ObjSelector(Application.View, view_path))) {
+                                    let View_Block = new View(view_path, this.req, this.res);
                                     View_Block.data(this._data);
                                     this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                                 } else {
@@ -282,12 +282,12 @@ module.exports = class MarkerScript {
 
                                 let code_path = command[1];
                                 let code_exist = true;
-                                if (!Application.System.ObjSelector(global, code_path)) {
+                                if (!ObjSelector(global, code_path)) {
                                     code_exist = false;
                                 }
 
                                 if (code_exist) {
-                                    let New_Block = Application.System.ObjSelector(global, code_path);
+                                    let New_Block = ObjSelector(global, code_path);
                                     this.html = BeforeBlock + await New_Block(this.req, this.res, this._data) + AfterBlock;
                                 } else {
                                     ErrorCatcher('Error: Function ' + code_path + '() not found')
