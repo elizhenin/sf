@@ -1,6 +1,6 @@
 // export ClassLoader
-module.exports = class AppLoader{
-    constructor(root){
+module.exports = class AppLoader {
+    constructor(root) {
         let CurrentDirectory = Application.config.Directories.App;
         let PopularizeCollections = function (rootNode, Directory, doNext) {
             let SubcollectionList = [];
@@ -18,18 +18,24 @@ module.exports = class AppLoader{
                         //add this js to namespace
                         let _init = function (firstTry = false) {
                             let filename = Application.lib.path.join(Directory, item);
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -3).split('/').join('_');
+                            if (2 > classname.split('_').length) classname = false;
                             try {
                                 rootNode[ObjName] = require(filename);
+                                if (classname) global[classname] = rootNode[ObjName];
                                 if (!firstTry) {
                                     Application._appReady = true;
                                     console.log(filename + ' now ready')
                                 }
                             } catch (e) {
                                 Application._appReady = false;
-                                if ("TypeError: Class extends value undefined is not a constructor or null" === e.toString()) {
+                                if (
+                                    "TypeError: Class extends value undefined is not a constructor or null" === e.toString()
+                                ) {
                                     console.log(`${filename} waiting retry [${e}]`)
                                 } else {
-                                    console.log(e)
+                                    console.log(e);
+                                    console.log(`\n${filename} waiting retry`)
                                 }
                                 setTimeout(_init, 100)
                             }
@@ -50,11 +56,11 @@ module.exports = class AppLoader{
                     doNext(rootNode[item], Application.lib.path.join(Directory, item), doNext);
                 }
             }
-    
+
             return;
-    
+
         };
-    
+
         PopularizeCollections(root, CurrentDirectory, PopularizeCollections)
     }
 }

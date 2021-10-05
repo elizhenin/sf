@@ -1,4 +1,4 @@
-module.exports = class extends Application.System.Controller {
+module.exports = class extends Controller_Template {
     async _before(){
         this.result = "" //we dont use any html templates here, so it must be empty string
     }

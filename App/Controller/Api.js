@@ -48,20 +48,20 @@ module.exports = class extends Application.System.Controller {
             }
 
             if (this.result.status == "success") {
-                let Model_LCRUD = new Application.Model.LCRUD();
-                await Model_LCRUD.With(this.req.headers.collection);
+                let _Model_LCRUD = new Model_LCRUD();
+                await _Model_LCRUD.With(this.req.headers.collection);
                 switch (this.req.headers.operation) {
                     case "List": {
-                        this.result.records = await Model_LCRUD.List(this.req.body);
+                        this.result.records = await _Model_LCRUD.List(this.req.body);
                         break
                     }
                     case "Read": {
-                        this.result.record = await Model_LCRUD.Read(this.req.body.id);
+                        this.result.record = await _Model_LCRUD.Read(this.req.body.id);
                         break
                     }
                     case "Create": {
-                        await Model_LCRUD.Create(this.req.body);
-                        this.result.records = await Model_LCRUD.List();
+                        await _Model_LCRUD.Create(this.req.body);
+                        this.result.records = await _Model_LCRUD.List();
                         break
                     }
                     case "Update": {
@@ -69,8 +69,8 @@ module.exports = class extends Application.System.Controller {
                             this.result.status = "error";
                             this.result.message = "Для данной операции обязательно поле id"
                         } else {
-                            await Model_LCRUD.Update(this.req.body)
-                            this.result.records = await Model_LCRUD.List();
+                            await _Model_LCRUD.Update(this.req.body)
+                            this.result.records = await _Model_LCRUD.List();
                         }
 
                         break
@@ -80,8 +80,8 @@ module.exports = class extends Application.System.Controller {
                             this.result.status = "error";
                             this.result.message = "Для данной операции обязательно поле id"
                         } else {
-                            await Model_LCRUD.Delete(this.req.body.id)
-                            this.result.records = await Model_LCRUD.List();
+                            await _Model_LCRUD.Delete(this.req.body.id)
+                            this.result.records = await _Model_LCRUD.List();
                         }
                         break
                     }
