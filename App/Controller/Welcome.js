@@ -15,6 +15,7 @@ module.exports = class extends Controller_Template {
     }
 
     async client_onload(){
-       await this.client_sampleBarFunction();
+       await client_sampleBarFunction();
+       await server_noop();
     }
 }

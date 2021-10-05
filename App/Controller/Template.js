@@ -18,4 +18,8 @@ module.exports = class extends Application.System.Controller {
         return await Mailer.send(myMailAddress/*address where to send*/, "Hello from fresh install"/*mail subject*/, "This html part may be prepared via View()"/*html body of mail*/,false/* no attachments*/)
      }
 
+     async server_noop(){
+         
+     }
+
 }

@@ -156,6 +156,7 @@ module.exports = class InternalAPI{
                     status: "success",
                     result: await _Controller['server_' + action](...arg)
                 };
+                if("undefined" === typeof result.result) result.result = null;
                 result.result = CryptoJS.AES.encrypt(JSON.stringify(result.result), apiToken).toString();
             } catch (e) {
                 //found error on controller.action stage
