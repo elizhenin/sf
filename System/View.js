@@ -168,7 +168,7 @@ module.exports = class MarkerScript {
                             var FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'notis ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'notis ' + command[1] + this.markerAfter);
 
-                            if (!empty(this._data[command[1]])) {
+                            if ("undefined" != typeof this._data[command[1]]) {
                                 if (this._data[command[1]] == command[2]) { //show block if true
                                     this.html = BeforeBlock + TrueBlock + AfterBlock;
                                 } else { //show alt block if false
@@ -193,7 +193,7 @@ module.exports = class MarkerScript {
                             var CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endfor ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endfor ' + command[1] + this.markerAfter);
 
-                            if (!empty(this._data[command[1]])) {
+                            if ("undefined" != typeof this._data[command[1]]) {
 
                                 var block_list = '';
                                 for (let key in this._data[command[1]]) {
