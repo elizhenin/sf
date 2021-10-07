@@ -66,123 +66,7 @@ for(let id in Application.ORM.<db_name>.<modelName>)
   }
 */
 
-let InstanceOf = function (db, model, id, Models) {
-    let instance = {}
-    Object.defineProperty(instance, '@id', {
-        enumerable: false,
-        value: id
-    });
-    let pairs = {};
-    for (let i in model['@struct'].fields) {
-        let f = model['@struct'].fields[i];
-        pairs[f] = [f, f]
-    };
-    let mapping = ObjSelector(model['@struct'], 'mapping', true);
-    for (let key in mapping) {
-        pairs[key] = [key, mapping[key]];
-    }
-    for (let i in model['@struct'].fields) {
-        let field = model['@struct'].fields[i];
-        let fieldname = pairs[field][0];
-        let columnname = pairs[field][1];
-        let config = {
-            enumerable: true
-        }
-        if (!empty(
-                model['@struct'].relay[fieldname]
-            )) {
-            //read content and retrieve instance of relayed object
-            config.get = async function () {
-                let row = await db.select(columnname).from(model['@struct'].table).where(model['@struct'].id, '=', id).limit(1);
-                return Models[model['@struct'].relay[fieldname].model][row[0][columnname]]
-            }
-        } else {
-            //just read content
-            config.get = async function () {
-                let row = await db.select(columnname).from(model['@struct'].table).where(model['@struct'].id, '=', id).limit(1);
-                return row[0][columnname]
-            }
 
-            config.set = async function (value) {
-                let row = {}
-                row[columnname] = value
-                await db.update(row).where(model['@struct'].id, '=', model['@id']).into(model['@struct'].table);
-            }
-        }
-
-
-        Object.defineProperty(instance, fieldname, config)
-    }
-    instance.asObject = async function (fieldset = []) {
-        let o = {}
-        if (empty(fieldset)) {
-            fieldset = []
-            for (let i in pairs) fieldset.push(pairs[i][0]);
-        }
-        for (let i in pairs) {
-            let field = pairs[i][0];
-            if (fieldset.indexOf(field) > -1) {
-                o[field] = await this[pairs[i][0]];
-                if (!empty(
-                        model['@struct'].relay[field]
-                    )) {
-                    if (!empty(o[field])) o[field] = o[field]['@id'];
-                    else o[field] = null;
-                }
-            }
-        }
-        return o;
-    }
-    Object.defineProperty(instance, 'asObject', {
-        enumerable: false,
-    });
-
-    return instance
-}
-
-let Model_Indexes = async function (db, struct, models) {
-    /*
-    struct{
-           *id (string) name of id field
-           *fields(array of string)  names of object fields.
-            mapping(object key-value) field->column mapping. key is object field, value is table column. If pair not set, use column name as object field
-          }
-    */
-
-    let model = {}
-    //add meta-info about model
-    model['@struct'] = struct;
-    model['@id'] = struct.id;
-
-    //define method for reading indexes and set instance objects for table rows
-    model.readIndexes = async function () {
-        let indexes = await db.select(model['@id']).from(model['@struct']['table']);
-        indexes.forEach(function (id) {
-            model[id[model['@id']]] = InstanceOf(db, model, id[model['@id']], models)
-        })
-    }
-
-    //define method for checking existense of  record in DB (). if record no more available, delete it's index from model
-    model.refresh = async function () {
-        for (id in this) {
-            let check = await this[id].asObject(model['@id']);
-            if (empty(check)) delete this[id];
-        }
-        await this.readIndexes();
-    }
-
-    //do not show methods in "for ... in ..." structures
-    for(let method in model){
-        Object.defineProperty(model, method, {
-            enumerable: false
-        });
-    }
-
-    //first-time populate index.
-    await model.readIndexes();
-    //finish
-    return model;
-}
 module.exports = class ORM {
     constructor(db = "default") {
         this._db = db;
@@ -194,7 +78,6 @@ module.exports = class ORM {
     }
 
     async factory() {
-        let DB = this.DB();
         let model = ObjSelector(Application, 'ORM.' + this._db, true);
         let Object_keys_global = Object.keys(global)
         let models = [];
@@ -205,8 +88,154 @@ module.exports = class ORM {
         for (let i in models) {
             let m = models[i];
             if ("object" === typeof global[m]) {
-                model[m.slice('Model_'.length)] = await Model_Indexes(DB, global[m], model)
+                model[m.slice('Model_'.length)] = new this.Model(this.DB(), model, global[m]);
+                //first-time populate index.
+                await model[m.slice('Model_'.length)].read();
             }
+        }
+    }
+
+    //all the rest
+    Model = class {
+        constructor(db, models, struct) {
+            //add meta information
+            this['@id'] = struct.id;
+            this['@struct'] = struct;
+            //add external objects
+            this.db = db;
+            this.models = models
+
+            // do not show methods in "for ... in ..." structures
+            for (let method in this) {
+                Object.defineProperty(this, method, {
+                    enumerable: false
+                });
+            }
+        }
+        //define method for reading indexes and set instance objects for table rows
+        async read() {
+            let db = this.db;
+            let model = this;
+            let indexes = await db.select(model['@id']).from(model['@struct']['table']);
+            indexes.forEach(function (id) {
+                model[id[model['@id']]] = new Application.System.ORM.Instance(model, id[model['@id']]);
+                model[id[model['@id']]].read();
+            })
+        }
+        //define method for checking existense of  record in DB (). if record no more available, delete it's index from model
+        async refresh() {
+            let model = this;
+            for (let id in model) {
+                let check = await model[id].asObject(model['@id']);
+                if (empty(check)) delete model[id];
+            }
+            await this.read();
+        }
+    }
+
+    static Instance = class {
+        constructor(model, id) {
+            //add internal attributes
+            this['@id'] = id;
+
+            //add links to external objects
+            this['@model'] = model;
+
+            let pairs = {}; //field-column mapping
+            for (let i in model['@struct'].fields) {
+                let f = model['@struct'].fields[i];
+                pairs[f] = [f, f]
+            };
+            let mapping = ObjSelector(model['@struct'], 'mapping', true);
+            for (let key in mapping) {
+                pairs[key] = [key, mapping[key]];
+            }
+            this['@pairs'] = pairs;
+
+
+            // do not show methods in "for ... in ..." structures
+            for (let method in this) {
+                Object.defineProperty(this, method, {
+                    enumerable: false
+                });
+            }
+        }
+
+        read() {
+            //read and add
+            let id = this['@id'];
+            let model = this['@model'];
+            let pairs = this['@pairs'];
+            let Models = model.models;
+            let db = model.db;
+
+            //populate objects with fields, set up getter/setter for each
+            for (let i in model['@struct'].fields) {
+                let field = model['@struct'].fields[i];
+                let fieldname = pairs[field][0];
+                let columnname = pairs[field][1];
+                let config = {
+                    enumerable: true,
+                    configurable: true,
+                    writeable: true
+                }
+                if (!empty(
+                        model['@struct'].relay[fieldname]
+                    )) {
+                    //read content and retrieve instance of relayed object
+                    config.get = async function () {
+                        let row = await db.select(columnname).from(model['@struct'].table).where(model['@struct'].id, '=', id).limit(1);
+                        return Models[model['@struct'].relay[fieldname]][row[0][columnname]]
+                    }
+                    config.set = async function (value) {
+                        let row = {}
+                        if ("object" === typeof value) row[columnname] = value['@id'];
+                        else row[columnname] = value;
+                        await db.update(row).where(model['@struct'].id, '=', id).into(model['@struct'].table);
+                    }
+                } else {
+                    //just read content
+                    config.get = async function () {
+                        let row = await db.select(columnname).from(model['@struct'].table).where(model['@struct'].id, '=', id).limit(1);
+                        return row[0][columnname]
+                    }
+
+                    config.set = async function (value) {
+                        let row = {}
+                        row[columnname] = value
+                        await db.update(row).where(model['@struct'].id, '=', id).into(model['@struct'].table);
+                    }
+                }
+                Object.defineProperty(this, fieldname, config);
+            }
+        }
+
+        async asObject(fieldset = [], fullTree = false) {
+            let pairs = this['@pairs']
+            let model = this['@model'];
+            let Models = model.models;
+            let o = {}
+            if (empty(fieldset)) {
+                fieldset = []
+                for (let i in pairs) fieldset.push(pairs[i][0]);
+            }
+            for (let i in pairs) {
+                let field = pairs[i][0];
+                if (fieldset.indexOf(field) > -1) {
+                    o[field] = await this[pairs[i][0]];
+                    if (!empty(
+                            model['@struct'].relay[field]
+                        )) {
+                        if (!empty(o[field])) o[field] = o[field]['@id'];
+                        else o[field] = null;
+                        if (fullTree && !empty(o[field])) {
+                            o[field] = await Models[model['@struct'].relay[field]][o[field]].asObject([], fullTree)
+                        }
+                    }
+
+                }
+            }
+            return o;
         }
     }
 }
