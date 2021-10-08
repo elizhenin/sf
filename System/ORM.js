@@ -19,12 +19,8 @@ module.exports = {
         'user':'user_id'
     },
     relay:{ //if some of columns contain id for row in other table, set the relayed models here. ORM give you (potentially) unlimited tree of objects
-        'parent':{
-            model: 'Pages'
-        },
-        'user':{
-            model: 'Users'
-        }
+        'parent':'Pages',
+        'user':'Users'
     }
 }
 
@@ -48,22 +44,41 @@ Application.orm_driver = new Application.System.ORM([<db_name>]);
 await Application.orm_driver.factory();
 
 3) if you're not alone in RDBMS and records may be changed by foreign - set the refreshing task in Application.Scheduler.Periodic:
-await Application.orm_driver.refresh();
+Application.ORM.<db_name>.forEach(
+    async function(model){
+         await model.refresh()
+        } )
 
 4) Look at Application.ORM.<db_name> object three. If all correct - you'll see models and items inside them.
-Items are enumerated by
+Items are enumerated by for(<id> in <model>){} construction:
 for(let id in Application.ORM.<db_name>.<modelName>) 
   {
     let item = Application.ORM.<db_name>.<modelName>[id];
      //take value of field:
     let pageName = await item.name;
      //also in subitem, as configurated in "relay" section of model:
-    let userName = await item.user.name;
+    let userName = await (await item.user).name;
      //and you can take the record as simple key:value object
-    let data = await item.asObject();
+    let data = await item.asObject();// asObject([array of fieldName] , fullTree = false)
      //or only some fields
-    let smallData = await item.asObject({'name','alias'});
+    let smallData = await item.asObject(['name','alias']);
+     //full recursive tree
+     let allData = await item.asObject([],true);
   }
+
+*TO add new row to table, use
+  newObj = await Application.ORM.<db_name>.<modelName>.new({
+     fieldName1:<value>,
+     fieldName2:<value>,
+     ...
+ });
+ the newObj will be an Instance of new record, and Model also will be populated with new <id>
+
+ *TO delete a record, use one of the folowing:
+ - await Application.ORM.<db_name>.<modelName>.delete(<id>)
+ or
+ - await Application.ORM.<db_name>.<modelName>[<id>].delete()
+ where <id> is record id (table PK)
 */
 
 
@@ -77,14 +92,20 @@ module.exports = class ORM {
 
     }
 
-    async factory() {
+    async factory(modelName = undefined) {
         let model = ObjSelector(Application, 'ORM.' + this._db, true);
-        let Object_keys_global = Object.keys(global)
+
         let models = [];
-        Object_keys_global.forEach(key => {
-            if (key.startsWith('Model_')) models.push(key)
-        })
-        Object_keys_global = undefined;
+        if(empty(modelName)){
+            let Object_keys_global = Object.keys(global)
+            Object_keys_global.forEach(key => {
+                if (key.startsWith('Model_')) models.push(key)
+            })
+            Object_keys_global = undefined;
+        }else{
+            models.push(modelName)
+        }
+
         for (let i in models) {
             let m = models[i];
             if ("object" === typeof global[m]) {
@@ -130,6 +151,28 @@ module.exports = class ORM {
                 if (empty(check)) delete model[id];
             }
             await this.read();
+        }
+
+        async delete(id){
+            await this["@id"].delete();
+        }
+        async new(row = {}){
+            let newObject = new Application.System.ORM.Instance(this,0);
+            let pairs = newObject['@pairs'];
+            let _row = {};
+            
+            for(let i in _row){
+                _row[pairs[i][1]] = null;
+            }
+
+            for(let i in row){
+                _row[pairs[i][1]] = row[i];
+            }
+            let db = this.db;
+            let id = (await db.insert(_row).into(this['@struct'].table))[0];
+            this[id] = new Application.System.ORM.Instance(this,id);
+            this[id].read();
+            return this[id];
         }
     }
 
@@ -236,6 +279,13 @@ module.exports = class ORM {
                 }
             }
             return o;
+        }
+
+        async delete(){
+            let model = this['@model'];
+            let db = model.db;
+            await db.where(model['@struct'].id,'=',this['@id']).del().into(model['@struct'].table);
+            delete model[this['@id']];
         }
     }
 }
