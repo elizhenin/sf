@@ -89,7 +89,7 @@ module.exports = class View {
 
 
     //apply replacement
-    async parse() {
+    async parse(cleanup = false) {
 
         let BeforeMarker = function (html, marker) {
             let beginPos = 0;
@@ -144,6 +144,10 @@ module.exports = class View {
                                 } else { //show alt block if false
                                     this.html = BeforeBlock + FalseBlock + AfterBlock;
                                 }
+                            }else{
+                                if (cleanup){
+                                    this.html = BeforeBlock+AfterBlock;
+                                }
                             }
                             break;
                         }
@@ -174,6 +178,10 @@ module.exports = class View {
                                 } else { //show alt block if false
                                     this.html = BeforeBlock + FalseBlock + AfterBlock;
                                 }
+                            }else{
+                                if (cleanup){
+                                    this.html = BeforeBlock+AfterBlock;
+                                }
                             }
                             break;
                         }
@@ -203,6 +211,10 @@ module.exports = class View {
                                     block_list += await View_Block.value();
                                 }
                                 this.html = BeforeBlock + block_list + AfterBlock;
+                            }else{
+                                if (cleanup){
+                                    this.html = BeforeBlock+AfterBlock;
+                                }
                             }
                             break;
                         }
@@ -222,11 +234,15 @@ module.exports = class View {
                             var CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
 
-                            if (!empty(this._data[command[1]])) {
+                            if ("undefined" != typeof this._data[command[1]]) {
                                 let View_Block = new View(null, this.req, this.res);
                                 View_Block.factory(CycleBlock);
                                 View_Block.data(this._data[command[1]]);
                                 this.html = BeforeBlock + await View_Block.value() + AfterBlock;
+                            }else{
+                                if (cleanup){
+                                    this.html = BeforeBlock+AfterBlock;
+                                }
                             }
                             break;
                         }
@@ -239,7 +255,7 @@ module.exports = class View {
                             */
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
-                            if (!empty(command[1])) {
+                            if ("undefined" != typeof this._data[command[1]]) {
                                 /* variables syntax:
                                 ?var_name, if "?" found - look for var_name in data and replace
                                 */
@@ -265,6 +281,10 @@ module.exports = class View {
                                     ErrorCatcher('Warning: View ' + view_path + ' not found')
                                 }
 
+                            }else{
+                                if (cleanup){
+                                    this.html = BeforeBlock+AfterBlock;
+                                }
                             }
                             break;
                         }
@@ -278,7 +298,7 @@ module.exports = class View {
                             */
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
-                            if (!empty(command[1])) {
+                            if ("undefined" != typeof this._data[command[1]]) {
 
                                 let code_path = command[1];
                                 let code_exist = true;
@@ -292,6 +312,10 @@ module.exports = class View {
                                 } else {
                                     ErrorCatcher('Error: Function ' + code_path + '() not found')
                                 }
+                            }else{
+                                if (cleanup){
+                                    this.html = BeforeBlock+AfterBlock;
+                                }
                             }
 
                             break;
@@ -302,8 +326,13 @@ module.exports = class View {
                 } else {
                     //its just a variable
                     try {
-                        if (!empty(this._data[key]))
+                        if ("undefined" != typeof this._data[key]) {
                             this.html = this.html.split(this.markerBefore + key + this.markerAfter).join(this._data[key]);
+                        }else{
+                            if (cleanup){
+                                this.html = this.html.split(this.markerBefore + key + this.markerAfter).join("");
+                            }
+                        }
                     } catch (e) {
                         ErrorCatcher(e);
                     }
@@ -319,14 +348,7 @@ module.exports = class View {
 
     //apply replacement, clear unused markers and return current resulting text
     async render() {
-        await this.parse();
-
-        this._aggregateMarkers();
-        try {
-            this.markers.forEach(marker => {
-                this.html = this.html.split(this.markerBefore + marker + this.markerAfter).join('');
-            });
-        } catch (e) {}
+        await this.parse(true);
         return this.html;
     };
 

@@ -227,7 +227,11 @@ module.exports = function sysTools() {
         };
 
         Context.md5 = function (str, as_bin = false) {
-
+            /*
+            md5(input:<string|array>,as_bin:<boolean>)
+            if as_bin true, input/output is array of 8bit charcodes.
+            if false, input is string and output is hex string too
+            */
             function M(d) {
                 let _, m = "0123456789ABCDEF",
                     f = "";
@@ -240,7 +244,15 @@ module.exports = function sysTools() {
             function X(d) {
                 let _ = Array(d.length >> 2);
                 for (let m = 0; m < _.length; m++) _[m] = 0;
-                for (m = 0; m < 8 * d.length; m += 8) _[m >> 5] |= (255 & d.charCodeAt(m / 8)) << m % 32;
+                if ("string" === typeof d) {
+                    for (m = 0; m < 8 * d.length; m += 8) {
+                        _[m >> 5] |= (255 & d.charCodeAt(m / 8)) << m % 32;
+                    }
+                } else {
+                    for (m = 0; m < 8 * d.length; m += 8) {
+                        _[m >> 5] |= (255 & d[m / 8]) << m % 32;
+                    }
+                }
                 return _
             }
 
@@ -294,7 +306,6 @@ module.exports = function sysTools() {
             function bit_rol(d, _) {
                 return d << _ | d >>> 32 - _
             }
-            str = str.toString();
             result = M(V(Y(X(str), 8 * str.length)));
             result = result.toLowerCase();
             if (as_bin) {
@@ -303,51 +314,49 @@ module.exports = function sysTools() {
                         hexString = (hexString + '').replace(/[^a-f0-9]/gi, '');
                         return parseInt(hexString, 16);
                     };
-                    let bin = '';
+                    let bin = [];
                     for (let i = 0; i < hexSource.length; i = i + 2) {
-                        bin += String.fromCharCode(hexdec(hexSource.substr(i, 2)));
+                        bin.push(hexdec(hexSource.substr(i, 2)));
                     }
                     return bin;
                 }
-
-
-
                 result = hex2bin(result);
             }
             return result;
 
         };
 
-        Context.sha1 = function (s) {
-            let toUTF8Array = function (str) {
-                var utf8 = [];
-                for (var i = 0; i < str.length; i++) {
-                    var charcode = str.charCodeAt(i);
-                    if (charcode < 0x80) utf8.push(charcode);
-                    else if (charcode < 0x800) {
-                        utf8.push(0xc0 | (charcode >> 6),
-                            0x80 | (charcode & 0x3f));
-                    } else if (charcode < 0xd800 || charcode >= 0xe000) {
-                        utf8.push(0xe0 | (charcode >> 12),
-                            0x80 | ((charcode >> 6) & 0x3f),
-                            0x80 | (charcode & 0x3f));
-                    }
-                    // surrogate pair
-                    else {
-                        i++;
-                        // UTF-16 encodes 0x10000-0x10FFFF by
-                        // subtracting 0x10000 and splitting the
-                        // 20 bits of 0x0-0xFFFFF into two halves
-                        charcode = 0x10000 + (((charcode & 0x3ff) << 10) |
-                            (str.charCodeAt(i) & 0x3ff));
-                        utf8.push(0xf0 | (charcode >> 18),
-                            0x80 | ((charcode >> 12) & 0x3f),
-                            0x80 | ((charcode >> 6) & 0x3f),
-                            0x80 | (charcode & 0x3f));
-                    }
+        Context.toUTF8Array = function (str) {
+            var utf8 = [];
+            for (var i = 0; i < str.length; i++) {
+                var charcode = str.charCodeAt(i);
+                if (charcode < 0x80) utf8.push(charcode);
+                else if (charcode < 0x800) {
+                    utf8.push(0xc0 | (charcode >> 6),
+                        0x80 | (charcode & 0x3f));
+                } else if (charcode < 0xd800 || charcode >= 0xe000) {
+                    utf8.push(0xe0 | (charcode >> 12),
+                        0x80 | ((charcode >> 6) & 0x3f),
+                        0x80 | (charcode & 0x3f));
                 }
-                return utf8;
+                // surrogate pair
+                else {
+                    i++;
+                    // UTF-16 encodes 0x10000-0x10FFFF by
+                    // subtracting 0x10000 and splitting the
+                    // 20 bits of 0x0-0xFFFFF into two halves
+                    charcode = 0x10000 + (((charcode & 0x3ff) << 10) |
+                        (str.charCodeAt(i) & 0x3ff));
+                    utf8.push(0xf0 | (charcode >> 18),
+                        0x80 | ((charcode >> 12) & 0x3f),
+                        0x80 | ((charcode >> 6) & 0x3f),
+                        0x80 | (charcode & 0x3f));
+                }
             }
+            return utf8;
+        }
+
+        Context.sha1 = function (s) {
 
             let byteToUint8Array = function (byteArray) {
                 var uint8Array = new Uint8Array(byteArray.length);

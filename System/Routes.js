@@ -189,16 +189,17 @@ let RequestHandler = class {
         let URL = this.req.path;
         //detect domain name match
         let domains = Object.keys(Application.routes);
-        let domainsRoutes = false;
+        let domainsRoutes = null;
         let clientHost = this.HOST;
         for (let domains_index = 0; domains_index < domains.length; domains_index++) {
             let domain = domains[domains_index];
-            if (clientHost.match(domain)) {
+            if (!empty(clientHost.match(domain))) {
                 domainsRoutes = Application.routes[domain];
                 break
             }
         }
-        if (domainsRoutes != "false") {
+
+        if (domainsRoutes != null) {
             let type_of_route = typeof domainsRoutes;
             let Controller = "Default";
             let action = "index"
