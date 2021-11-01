@@ -119,6 +119,41 @@ module.exports = class View {
                     //command found
                     var command = key.split(' ');
                     switch (command[0]) {
+                        case "IF":{
+                            //IF num condition
+                            /*
+                            Syntax:
+                            
+                            IF num condition
+                            {some block for condition==true}
+                             [ else num
+                            {some alt block  for condition==false} ]
+                            endIF num
+
+                            the "num" is an index of this IF block
+                            */
+
+                            let code = key.slice("IF".length+1+command[1].length+1);//take part after "IF num"
+
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + key + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + key + this.markerAfter);
+                            let TrueBlock = BeforeMarker(AfterBlock, this.markerBefore + 'ENDIF ' + command[1] + this.markerAfter);
+                            AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'ENDIF ' + command[1] + this.markerAfter);
+                            let FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'ELSE ' + command[1] + this.markerAfter);
+                            TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'ELSE ' + command[1] + this.markerAfter);
+                            
+                            let funcArgs = Object.keys(this._data);
+                            let funcBody = `console.log(arguments);return (${code})? true:false;`;
+                            let func = new Function(...funcArgs,funcBody);
+                            console.log(eval(func).toString())
+                            if (func(...Object.values(this._data))) { //show block if true
+                                this.html = BeforeBlock + TrueBlock + AfterBlock;
+                            } else { //show alt block if false
+                                this.html = BeforeBlock + FalseBlock + AfterBlock;
+                            }
+
+                            break;
+                        }
                         case "if": {
                             //if condition
                             /*

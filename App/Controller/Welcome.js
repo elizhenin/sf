@@ -1,6 +1,12 @@
 module.exports = class extends Controller_Template {
      async action_index(){
         let content = new this.View("default.welcome");
+        content.data({
+            foo:"my test string",
+            bar:"other test string",
+            yes:'yes))',
+            no:"no(((("
+        })
         this.result.content = await content.value()
     }
 
