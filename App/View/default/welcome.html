@@ -3,12 +3,13 @@
 </div>
 <div>
     View tests<br>
+
     {{IF 1 foo == "my test string"}}
-    Here is true block - {{yes}}
-     {{IF 2 !empty(bar)}}
-        Here also true
-     {{ENDIF 2}}
+      Here is true block - {{yes}}
+      {{IF 2 !empty(bar)}}
+         Here also true
+      {{ENDIF 2}}
     {{ELSE 1}}
-    And false block {{no}}
+       And false block {{no}}
     {{ENDIF 1}}
 </div>

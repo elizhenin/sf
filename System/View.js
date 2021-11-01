@@ -133,7 +133,7 @@ module.exports = class View {
                             the "num" is an index of this IF block
                             */
 
-                            let code = key.slice("IF".length+1+command[1].length+1);//take part after "IF num"
+                            let code = key.slice("IF".length+1+command[1].length+1);//take part after "IF num "
 
                             let BeforeBlock = BeforeMarker(this.html, this.markerBefore + key + this.markerAfter);
                             let AfterBlock = AfterMarker(this.html, this.markerBefore + key + this.markerAfter);
