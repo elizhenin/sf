@@ -143,9 +143,8 @@ module.exports = class View {
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'ELSE ' + command[1] + this.markerAfter);
                             
                             let funcArgs = Object.keys(this._data);
-                            let funcBody = `console.log(arguments);return (${code})? true:false;`;
+                            let funcBody = `return (${code})? true:false;`;
                             let func = new Function(...funcArgs,funcBody);
-                            console.log(eval(func).toString())
                             if (func(...Object.values(this._data))) { //show block if true
                                 this.html = BeforeBlock + TrueBlock + AfterBlock;
                             } else { //show alt block if false
