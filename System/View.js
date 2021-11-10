@@ -2,7 +2,7 @@
 
 module.exports = class View {
 
-    constructor(view_name = null, req = null, res = null) {
+    constructor(view_name = null, req = null, res = null, lang = null) {
         // marker brackets:
         this.markerBefore = '{{';
         this.markerAfter = '}}';
@@ -24,6 +24,7 @@ module.exports = class View {
 
         this.req = req;
         this.res = res;
+        this.lang = lang;
     }
 
     _aggregateMarkers() {
@@ -289,7 +290,7 @@ module.exports = class View {
                             */
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
-                            if ("undefined" != typeof this._data[command[1]]) {
+                            if (!empty(command[1])) {
                                 /* variables syntax:
                                 ?var_name, if "?" found - look for var_name in data and replace
                                 */
@@ -312,13 +313,11 @@ module.exports = class View {
                                     View_Block.data(this._data);
                                     this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                                 } else {
-                                    ErrorCatcher('Warning: View ' + view_path + ' not found')
-                                }
-
-                            }else{
                                 if (cleanup){
                                     this.html = BeforeBlock+AfterBlock;
+                                }else ErrorCatcher('Warning: View ' + view_path + ' not found')
                                 }
+
                             }
                             break;
                         }
@@ -332,7 +331,7 @@ module.exports = class View {
                             */
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
-                            if ("undefined" != typeof this._data[command[1]]) {
+                            if (!empty(command[1])) {
 
                                 let code_path = command[1];
                                 let code_exist = true;
@@ -354,6 +353,29 @@ module.exports = class View {
 
                             break;
                         }
+
+                        case "i18n": {
+                            //i18n from Application.18n[langName][key], where key is all after i18n command
+                            /*
+                            Syntax:
+                            i18n Hello World
+
+                            */
+                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + key + this.markerAfter);
+                            var AfterBlock = AfterMarker(this.html, this.markerBefore + key + this.markerAfter);
+
+                            let lang_key = key.slice(4,key.length).trim();
+                            if (!empty(this.lang)) {
+                                let value = lang_key;
+                                let langpack = ObjSelector(Application.i18n,this.lang,true);
+                                if(!empty(langpack[lang_key])) value = langpack[lang_key];
+                                this.html = BeforeBlock+value+AfterBlock;
+                            }else{
+                                this.html = BeforeBlock+lang_key+AfterBlock;
+                            }
+                            break;
+                        }
+
                         default: {}
                     }
 
@@ -382,6 +404,9 @@ module.exports = class View {
 
     //apply replacement, clear unused markers and return current resulting text
     async render() {
+        await this.parse(true);
+        this._aggregateMarkers();
+        this._data = {}
         await this.parse(true);
         return this.html;
     };
