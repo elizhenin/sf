@@ -42,20 +42,20 @@ module.exports = class View {
             let other_list = [];
             this.markers.forEach(marker => {
                 let command = marker.split(' ').reverse().pop();
-                switch(command){
-                    case 'include':{
+                switch (command) {
+                    case 'include': {
                         inc_list.push(marker);
                         break;
                     }
-                    case 'for':{
+                    case 'for': {
                         for_list.push(marker);
                         break;
                     }
-                    case 'with':{
+                    case 'with': {
                         with_list.push(marker);
                         break;
                     }
-                    default:{
+                    default: {
                         other_list.push(marker);
                     }
                 }
@@ -113,14 +113,14 @@ module.exports = class View {
 
 
         for (let markers_index in this.markers) {
-           
+
             try {
                 let key = this.markers[markers_index];
                 if (key.indexOf(' ') > -1) {
                     //command found
                     var command = key.split(' ');
                     switch (command[0]) {
-                        case "IF":{
+                        case "IF": {
                             //IF num condition
                             /*
                             Syntax:
@@ -134,7 +134,7 @@ module.exports = class View {
                             the "num" is an index of this IF block
                             */
 
-                            let code = key.slice("IF".length+1+command[1].length+1);//take part after "IF num "
+                            let code = key.slice("IF".length + 1 + command[1].length + 1); //take part after "IF num "
 
                             let BeforeBlock = BeforeMarker(this.html, this.markerBefore + key + this.markerAfter);
                             let AfterBlock = AfterMarker(this.html, this.markerBefore + key + this.markerAfter);
@@ -142,10 +142,10 @@ module.exports = class View {
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'ENDIF ' + command[1] + this.markerAfter);
                             let FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'ELSE ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'ELSE ' + command[1] + this.markerAfter);
-                            
+
                             let funcArgs = Object.keys(this._data);
                             let funcBody = `return (${code})? true:false;`;
-                            let func = new Function(...funcArgs,funcBody);
+                            let func = new Function(...funcArgs, funcBody);
                             if (func(...Object.values(this._data))) { //show block if true
                                 this.html = BeforeBlock + TrueBlock + AfterBlock;
                             } else { //show alt block if false
@@ -179,9 +179,9 @@ module.exports = class View {
                                 } else { //show alt block if false
                                     this.html = BeforeBlock + FalseBlock + AfterBlock;
                                 }
-                            }else{
-                                if (cleanup){
-                                    this.html = BeforeBlock+AfterBlock;
+                            } else {
+                                if (cleanup) {
+                                    this.html = BeforeBlock + AfterBlock;
                                 }
                             }
                             break;
@@ -213,9 +213,9 @@ module.exports = class View {
                                 } else { //show alt block if false
                                     this.html = BeforeBlock + FalseBlock + AfterBlock;
                                 }
-                            }else{
-                                if (cleanup){
-                                    this.html = BeforeBlock+AfterBlock;
+                            } else {
+                                if (cleanup) {
+                                    this.html = BeforeBlock + AfterBlock;
                                 }
                             }
                             break;
@@ -240,15 +240,15 @@ module.exports = class View {
 
                                 var block_list = '';
                                 for (let key in this._data[command[1]]) {
-                                    let View_Block = new View(null, this.req, this.res);
+                                    let View_Block = new View(null, this.req, this.res, this.lang);
                                     View_Block.factory(CycleBlock);
                                     View_Block.data(this._data[command[1]][key]);
                                     block_list += await View_Block.value();
                                 }
                                 this.html = BeforeBlock + block_list + AfterBlock;
-                            }else{
-                                if (cleanup){
-                                    this.html = BeforeBlock+AfterBlock;
+                            } else {
+                                if (cleanup) {
+                                    this.html = BeforeBlock + AfterBlock;
                                 }
                             }
                             break;
@@ -270,13 +270,13 @@ module.exports = class View {
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
 
                             if ("undefined" != typeof this._data[command[1]]) {
-                                let View_Block = new View(null, this.req, this.res);
+                                let View_Block = new View(null, this.req, this.res, this.lang);
                                 View_Block.factory(CycleBlock);
                                 View_Block.data(this._data[command[1]]);
                                 this.html = BeforeBlock + await View_Block.value() + AfterBlock;
-                            }else{
-                                if (cleanup){
-                                    this.html = BeforeBlock+AfterBlock;
+                            } else {
+                                if (cleanup) {
+                                    this.html = BeforeBlock + AfterBlock;
                                 }
                             }
                             break;
@@ -307,15 +307,15 @@ module.exports = class View {
                                     view_path[i] = part_var.join('');
                                 }
                                 view_path = view_path.join('.');
-                              
+
                                 if (!empty(ObjSelector(Application.View, view_path))) {
-                                    let View_Block = new View(view_path, this.req, this.res);
+                                    let View_Block = new View(view_path, this.req, this.res, this.lang);
                                     View_Block.data(this._data);
                                     this.html = BeforeBlock + await View_Block.value() + AfterBlock;
                                 } else {
-                                if (cleanup){
-                                    this.html = BeforeBlock+AfterBlock;
-                                }else ErrorCatcher('Warning: View ' + view_path + ' not found')
+                                    if (cleanup) {
+                                        this.html = BeforeBlock + AfterBlock;
+                                    } else ErrorCatcher('Warning: View ' + view_path + ' not found')
                                 }
 
                             }
@@ -345,9 +345,9 @@ module.exports = class View {
                                 } else {
                                     ErrorCatcher('Error: Function ' + code_path + '() not found')
                                 }
-                            }else{
-                                if (cleanup){
-                                    this.html = BeforeBlock+AfterBlock;
+                            } else {
+                                if (cleanup) {
+                                    this.html = BeforeBlock + AfterBlock;
                                 }
                             }
 
@@ -364,14 +364,14 @@ module.exports = class View {
                             var BeforeBlock = BeforeMarker(this.html, this.markerBefore + key + this.markerAfter);
                             var AfterBlock = AfterMarker(this.html, this.markerBefore + key + this.markerAfter);
 
-                            let lang_key = key.slice(4,key.length).trim();
+                            let lang_key = key.slice(4, key.length).trim();
                             if (!empty(this.lang)) {
                                 let value = lang_key;
-                                let langpack = ObjSelector(Application.i18n,this.lang,true);
-                                if(!empty(langpack[lang_key])) value = langpack[lang_key];
-                                this.html = BeforeBlock+value+AfterBlock;
-                            }else{
-                                this.html = BeforeBlock+lang_key+AfterBlock;
+                                let langpack = ObjSelector(Application.i18n, this.lang, true);
+                                if (!empty(langpack[lang_key])) value = langpack[lang_key];
+                                this.html = BeforeBlock + value + AfterBlock;
+                            } else {
+                                this.html = BeforeBlock + lang_key + AfterBlock;
                             }
                             break;
                         }
@@ -384,8 +384,8 @@ module.exports = class View {
                     try {
                         if ("undefined" != typeof this._data[key]) {
                             this.html = this.html.split(this.markerBefore + key + this.markerAfter).join(this._data[key]);
-                        }else{
-                            if (cleanup){
+                        } else {
+                            if (cleanup) {
                                 this.html = this.html.split(this.markerBefore + key + this.markerAfter).join("");
                             }
                         }
