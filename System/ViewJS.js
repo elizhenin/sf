@@ -64,9 +64,15 @@ module.exports = class {
 
         let AsyncFunction = (async function(){}).constructor;
         let func = new AsyncFunction(functionArgs,functionBody);
-
-        let result = await func(...Object.values(data));
-
+        let result = '';
+        try{
+        result = await func(...Object.values(data));
+        }catch(e){
+            console.log('View name: ',this['@viewName']);
+            console.log('Error: ',e);
+            result = e.toString();
+        }
+        func = undefined;
         return result;
     }
 
