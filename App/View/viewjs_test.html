@@ -1,0 +1,20 @@
+<html>
+<?js await include('title') ?>
+<body>
+    <h1>${title}</h1>
+    <table>
+        <?js
+        let a = "?> 'hi' <?js  ?>";
+            for(let i in news){
+            ?>
+        <tr>
+            <td>${news[i].id}</td>
+            <td>${news[i].name}</td>
+        </tr>
+        <?js
+        }
+            ?>
+    </table>
+</body>
+
+</html>
