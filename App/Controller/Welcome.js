@@ -7,6 +7,33 @@ module.exports = class extends Controller_Template {
             yes:'yes))',
             no:"no(((("
         })
+
+        content.data({
+            firstLevel:[
+                {
+                    name:'firslLevel1',
+                    secondLevel:[
+                        {
+                            name:'secondLevel1'
+                        },
+                        {
+                            name:'secondLevel2'
+                        }
+                    ]
+                },
+                {
+                    name:'firslLevel2',
+                    secondLevel:[
+                        {
+                            name:'secondLevel1'
+                        },
+                        {
+                            name:'secondLevel2'
+                        }
+                    ]
+                }
+            ]
+        })
         this.result.content = await content.value()
     }
 
