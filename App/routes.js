@@ -28,6 +28,13 @@ module.exports = {
         controller: 'Welcome'
     },
     {
+        name: 'Welcome JS',
+        method: 'get',
+        uri: '/viewjs',
+        controller: 'Welcome',
+        action:'viewjs'
+    },
+    {
         name: 'Api requests',
         method: 'post',
         uri: '/api/:action?/:arg?',

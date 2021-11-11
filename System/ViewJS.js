@@ -1,11 +1,23 @@
 module.exports = class {
-    constructor(viewName = null, req = null, res = null, lang = null) {
+    constructor(viewName = null, req = null, res = null, i18n_lang = null) {
         //add meta information
         this['@viewName'] = viewName;
         //add external data
         this['@req'] = req;
         this['@res'] = res;
-        this['@lang'] = lang;
+        let i18n = function(lang_key){
+            let result = '';
+            if (!empty(i18n_lang)) {
+                let value = lang_key;
+                let langpack = ObjSelector(Application.i18n, i18n_lang, true);
+                if (!empty(langpack[lang_key])) value = langpack[lang_key];
+                result = value;
+            } else {
+                result = lang_key;
+            }
+            return result
+        }
+        this['@i18n'] = i18n;
 
         if (viewName) {
             try {
@@ -28,7 +40,11 @@ module.exports = class {
     }
     async render() {
         //take variables
-        let data = {}
+        let data = {
+            req:this['@req'],
+            res:this['@res'],
+            i18n:this['@i18n'],
+        }
         let includeAssign = '';
         for (let i in this) {
             data[i] = this[i];

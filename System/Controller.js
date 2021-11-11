@@ -14,6 +14,9 @@ module.exports = class Controller {
         this.View = function (view_path) {
             return new Application.System.View(view_path, req, res, i18n.lang);
         }
+        this.ViewJS = function (view_path) {
+            return new Application.System.ViewJS(view_path, req, res, i18n.lang);
+        }
         //define session instance
         try {
             this.Session = new Application.System.Session.instance(this.req.cookies[Application.System.Session._cookieName]);

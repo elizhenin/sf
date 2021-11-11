@@ -4,6 +4,7 @@ module.exports = class extends Controller_Template {
         this.result.content = await content.value()
     }
 
+
     async server_sampleFooSubFunction(name){
         return "Hello from namespace, "+name;
     }

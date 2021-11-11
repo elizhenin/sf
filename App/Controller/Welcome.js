@@ -10,6 +10,20 @@ module.exports = class extends Controller_Template {
         this.result.content = await content.value()
     }
 
+    async action_viewjs(){
+        let v = new Application.System.ViewJS('viewjs_test');
+        v.news = [{
+            id:323423,
+            name: 'New1'
+        }, {
+            id:222,
+            name: 'New2'
+        }];
+        v.title = "Sample page";
+        this.result.content = await v.render();
+
+    }
+
     async server_sampleFooFunction(name){
         return "Hello, "+name;
     }
