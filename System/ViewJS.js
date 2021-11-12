@@ -5,7 +5,7 @@ module.exports = class {
         //add external data
         this['@req'] = req;
         this['@res'] = res;
-        let i18n = function(lang_key){
+        let i18n = function (lang_key) {
             let result = '';
             if (!empty(i18n_lang)) {
                 let value = lang_key;
@@ -38,39 +38,42 @@ module.exports = class {
         this["@html"] = str;
         return this;
     }
-    async render() {
+    async render(includeOnce_loaded = {}) {
         //take variables
         let data = {
-            req:this['@req'],
-            res:this['@res'],
-            i18n:this['@i18n'],
+            req: this['@req'],
+            res: this['@res'],
+            i18n: this['@i18n'],
         }
         let includeAssign = '';
         for (let i in this) {
             data[i] = this[i];
-            includeAssign+= `v.${i} = ${i}\n`;
+            includeAssign += `v.${i} = ${i};\n`;
         }
 
-        // let code = `function(${Object.keys(data).join(', ')}){\n`;
-        // code += this._parse();
-        // code += `}\n`;
-        
         let functionBody = '';
-        functionBody+=`let include = async function(viewName){let v = new Application.System.ViewJS(viewName);`;
-        functionBody+=includeAssign;
-        functionBody+=`this["@html"]+= await v.render();}\n`;
-        functionBody+=this._parse();
+        functionBody+=`this["@loaded"] = arguments[arguments.length-1];\n`;
+        functionBody += `let include = async function(viewName){
+            let v = new Application.System.ViewJS(viewName);
+            `;
+        functionBody += includeAssign;
+        functionBody += `this["@html"]+= await v.render(this["@loaded"]);
+            }\n`;
+        functionBody +=
+            `let includeOnce = async function(viewName){
+            if(this["@loaded"][viewName]){}else{this["@loaded"][viewName] = true;await include(viewName);}
+        };\n`;
+        functionBody += this._parse();
         let functionArgs = Object.keys(data);
-
-        let AsyncFunction = (async function(){}).constructor;
-        let func = new AsyncFunction(functionArgs,functionBody);
+        let AsyncFunction = (async function () {}).constructor;
+        let func = new AsyncFunction(functionArgs, functionBody);
         let result = '';
-        try{
-        result = await func(...Object.values(data));
-        }catch(e){
-            console.log('View name: ',this['@viewName']);
-            console.log('Error: ',e);
-            result = e.toString();
+        try {
+            result = await func(...Object.values(data),includeOnce_loaded);
+        } catch (e) {
+            console.log('View name: ', this['@viewName']);
+            console.log('Error: ', e);
+            result = `<div><p>${e.toString()}</p><p>View name: <b>${this['@viewName']}</b></p></div>`;
         }
         func = undefined;
         return result;
@@ -91,7 +94,7 @@ module.exports = class {
         let code = 'this["@html"] = `';
         let toState = function (stateName) {
             if ('codeBody' === stateName) {
-               if(-1 === codeStringPosition) code += '`;\n';
+                if (-1 === codeStringPosition) code += '`;\n';
             }
             if ('html' === stateName && 2 === currentState) {
                 code += '\n this["@html"]+=`';
