@@ -3,13 +3,12 @@
 </div>
 <div>
     View tests<br>
+<?js
+     if("my test string" == foo){
+?>
+  Here is true block - ${yes}
+<?js if(!empty(bar)) { ?> Here also true <?js }
 
-    {{IF 1 foo == "my test string"}}
-      Here is true block - {{yes}}
-      {{IF 2 !empty(bar)}}
-         Here also true
-      {{ENDIF 2}}
-    {{ELSE 1}}
-       And false block {{no}}
-    {{ENDIF 1}}
+}else{ ?> And false block ${no} <?js }
+?>
 </div>

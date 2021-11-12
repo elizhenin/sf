@@ -1,14 +1,12 @@
 module.exports = class extends Controller_Template {
      async action_index(){
-        let content = new this.View("default.welcome");
-        content.data({
-            foo:"my test string",
-            bar:"other test string",
-            yes:'yes))',
-            no:"no(((("
-        })
+        let content = new this.ViewJS("default.welcome");
+        content.foo="my test string"
+        content.bar="other test string",
+        content.yes='yes))',
+        content.no="no(((("
 
-        content.data({
+        Object.assign(content,{
             firstLevel:[
                 {
                     name:'firslLevel1',
@@ -34,7 +32,7 @@ module.exports = class extends Controller_Template {
                 }
             ]
         })
-        this.result.content = await content.value()
+        this.result.content = await content.render()
     }
 
     async action_viewjs(){
