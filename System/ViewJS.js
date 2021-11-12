@@ -52,7 +52,7 @@ module.exports = class {
         }
 
         let functionBody = '';
-        functionBody+=`this["@loaded"] = arguments[arguments.length-1];\n`;
+        functionBody += `this["@loaded"] = arguments[arguments.length-1];\n`;
         functionBody += `let include = async function(viewName){
             let v = new Application.System.ViewJS(viewName);
             `;
@@ -69,7 +69,7 @@ module.exports = class {
         let func = new AsyncFunction(functionArgs, functionBody);
         let result = '';
         try {
-            result = await func(...Object.values(data),includeOnce_loaded);
+            result = await func(...Object.values(data), includeOnce_loaded);
         } catch (e) {
             console.log('View name: ', this['@viewName']);
             console.log('Error: ', e);
@@ -111,7 +111,10 @@ module.exports = class {
                         if (chr === codeOpen[codeOpenPosition]) {
                             currentState = toState('codeOpen');
                             codeOpenPosition++;
-                        } else code += chr;
+                        } else {
+                            if ("`" === chr) code += "\\";
+                            code += chr;
+                        };
                         break;
                     }
                     case 1: {
