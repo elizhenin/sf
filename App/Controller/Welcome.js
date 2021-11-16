@@ -5,7 +5,7 @@ module.exports = class extends Controller_Template {
         content.bar="other test string",
         content.yes='yes))',
         content.no="no(((("
-
+        content.date = +Date.now();
         Object.assign(content,{
             firstLevel:[
                 {

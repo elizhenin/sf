@@ -1,11 +1,12 @@
 //basic Sukina Framework controller
 module.exports = class Controller {
-    constructor(req, res, current_controller, current_action) {
+    constructor(req, res, current_controller, current_action, current_route) {
         this.req = req;
         this.res = res;
         this.result = {}
         this._controller = current_controller;
         this._action = current_action;
+        this._route = current_route;
         let i18n = {}
         i18n.lang = Object.keys(ObjSelector(Application, 'i18n', true))[0];
         if (empty(i18n.lang)) i18n.lang = null;

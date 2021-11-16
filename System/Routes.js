@@ -241,9 +241,9 @@ let RequestHandler = class {
                                 if (!empty(route.method)) {
                                     /* method is stricted - compare with request*/
                                     if (route.method.toLowerCase() === this.req.method.toLowerCase())
-                                        await this.handler(Controller, action);
+                                        await this.handler(Controller, action, route);
                                 } /* method is not stricted */
-                                else await this.handler(Controller, action);
+                                else await this.handler(Controller, action, route);
                                 break;
                             }
                         }
@@ -279,7 +279,7 @@ let RequestHandler = class {
         return domainsRoutes;
     }
 
-    async handler(Controller, action) {
+    async handler(Controller, action, route = null) {
         /*
            Work procedure chain:
            1) Controller._before
@@ -292,7 +292,7 @@ let RequestHandler = class {
 
         if (-1 === ["undefined", "object"].indexOf(typeof ObjSelector(Application.Controller, Controller))) {
             let _Controller = ObjSelector(Application.Controller, Controller);
-            _Controller = new _Controller(this.req, this.res, Controller, action);
+            _Controller = new _Controller(this.req, this.res, Controller, action, route);
             //1
             try {
                 await _Controller._before();
