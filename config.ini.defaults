@@ -24,4 +24,9 @@ ResponseDeflateStaticFiles=true
 ResponseDeflateFiletypes=txt,js,json,html,htm,xml,svg,css
 StaticFilesCache=true
 StaticFilesCacheMaxAge=31536000
+[MemCache]
+EnableResponse=true
+EnableResponseStatic=true
+ResponseTTL=30000
+MaxSize=10000000
 

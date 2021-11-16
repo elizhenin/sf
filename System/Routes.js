@@ -1,4 +1,4 @@
-module.exports = class Routes{
+module.exports = class Routes {
     constructor() {
         let MaxListeners = Application.config.Server.MaxListeners * 1;
         let ActiveListeners = 0;
@@ -132,6 +132,7 @@ let RequestHandler = class {
                 let fileExt = filepath.split('.').reverse()[0].toString().toLowerCase();
                 let encodeFile = this.encoding.check(req.headers['accept-encoding']) && (ResponseDeflateFiletypes.indexOf(fileExt) > -1);
                 if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && ("true" === Application.config.HTTP.ResponseDeflateStaticFiles);
+                let this_encoding = this.encoding;
                 async function worker() {
                     let ext_to_mime = function (ext) {
                         let result = "text/plain; charset=utf-8";
@@ -155,20 +156,41 @@ let RequestHandler = class {
                     }
                     if (encodeFile) headers['Content-Encoding'] = 'deflate';
                     res.writeHead(200, headers);
-
                     if (encodeFile) {
-                        let onError = function (err) {
-                            if (err) {
-                                res.end();
-                                console.error('Routes.static() error:', err);
+                        let is_cache = false;
+                        if (!empty(Application.config.MemCache) && !empty(Application.config.MemCache.EnableResponse)) is_cache = ("true" === Application.config.MemCache.EnableResponse);
+                        let is_sended = false;
+                        let is_less_size = false;let max_size = 10000000; //~10Mb
+                        if (!empty(Application.config.MemCache) && !empty(Application.config.MemCache.MaxSize)) max_size = Application.config.MemCache.MaxSize;
+                        if(stat.size<max_size) is_less_size = true;
+                        if(is_cache && is_less_size){
+                            let key = md5(filepath);
+                            if(MemCache.isset(key)) {
+                                res.end(MemCache.get(key));
+                            }else{
+                                let data = await Application.lib.fs_promises.readFile(filepath);
+                                data = await this_encoding.deflate(Buffer.from(data));
+                                MemCache.set(key,data);
+                                res.end(data);
                             }
+
+                            is_sended = true;
                         }
-                        Application.lib.stream.pipeline(
-                            Application.lib.fs.createReadStream(filepath),
-                            Application.lib.zlib.createDeflate(),
-                            res,
-                            onError
-                        );
+                        if(!is_sended){
+                            let onError = function (err) {
+                                if (err) {
+                                    res.end();
+                                    console.error('Routes.static() error:', err);
+                                }
+                            }
+                            Application.lib.stream.pipeline(
+                                Application.lib.fs.createReadStream(filepath),
+                                Application.lib.zlib.createDeflate(),
+                                res,
+                                onError
+                            );
+                        }
+
                     } else {
                         let readStream = Application.lib.fs.createReadStream(filepath);
                         readStream.pipe(res);
@@ -431,9 +453,19 @@ let RequestHandler = class {
                 res.end();
             } else {
                 let encodeResponse = this.encoding.check(req.headers['accept-encoding']);
+                let is_cache = false;
+                if (!empty(Application.config.MemCache) && !empty(Application.config.MemCache.EnableResponse)) is_cache = ("true" === Application.config.MemCache.EnableResponse);
                 if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflate)) encodeResponse = encodeResponse && ("true" === Application.config.HTTP.ResponseDeflate);
                 if (encodeResponse) {
-                    result = await this.encoding.deflate(Buffer.from(result));
+                    if (is_cache) {
+                        let key = md5(result);
+                        if (MemCache.isset(key)) {
+                            result = MemCache.get(key)
+                        } else {
+                            result = await this.encoding.deflate(Buffer.from(result));
+                            MemCache.set(key, result)
+                        }
+                    }
                     this.res.setHeader(
                         'Content-Encoding', 'deflate'
                     )

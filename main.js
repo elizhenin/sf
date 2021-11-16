@@ -40,12 +40,6 @@
         var config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
         branch = Object.assign(branch, new iniParser(config_text));
         config_text = undefined;
-        if ("undefined" !== typeof branch['#INCLUDE']) {
-            for (key in branch['#INCLUDE']) {
-                branch[key] = {};
-                Application._ConfigLoader(branch[key], branch['#INCLUDE'][key]);
-            }
-        };
     }
     Application._ConfigLoader(Application.config, 'config.ini');
     //set up clustering
@@ -90,7 +84,8 @@
                 for (let key in Application.database) {
                     Application.DB[key] = require('knex')(Application.database[key]);
                 }
-
+                //set up memcache
+                global['MemCache'] = new Application.System.MemCache();
                 //start listening
                 Application.HTTP = new Application.System.Routes();
                 Application.Scheduler = new Application.System.Scheduler();
