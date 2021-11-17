@@ -19,9 +19,6 @@ CookieMaxAge=900
 CookieName=sf-session-id
 CleanupInterval=5000
 [HTTP]
-ResponseDeflate=true
-ResponseDeflateStaticFiles=true
-ResponseDeflateFiletypes=txt,js,json,html,htm,xml,svg,css
 StaticFilesCache=true
 StaticFilesCacheMaxAge=31536000
 [MemCache]

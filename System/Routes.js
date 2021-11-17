@@ -1,4 +1,4 @@
-module.exports = class Routes{
+module.exports = class Routes {
     constructor() {
         let MaxListeners = Application.config.Server.MaxListeners * 1;
         let ActiveListeners = 0;
@@ -110,10 +110,6 @@ let RequestHandler = class {
     }
 
     async static() {
-        //preparing
-        let ResponseDeflateFiletypes = "txt,js,json,html,htm,xml,svg";
-        if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflateFiletypes)) ResponseDeflateFiletypes = Application.config.HTTP.ResponseDeflateFiletypes;
-        ResponseDeflateFiletypes = ResponseDeflateFiletypes.split(",");
         //working
         let result = false;
         if (this.req.path.length > 1) {
@@ -130,8 +126,6 @@ let RequestHandler = class {
                 let res = this.res;
                 let req = this.req;
                 let fileExt = filepath.split('.').reverse()[0].toString().toLowerCase();
-                let encodeFile = this.encoding.check(req.headers['accept-encoding']) && (ResponseDeflateFiletypes.indexOf(fileExt) > -1);
-                if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflateStaticFiles)) encodeFile = encodeFile && ("true" === Application.config.HTTP.ResponseDeflateStaticFiles);
                 async function worker() {
                     let ext_to_mime = function (ext) {
                         let result = "text/plain; charset=utf-8";
@@ -153,29 +147,13 @@ let RequestHandler = class {
                         if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.StaticFilesCacheMaxAge)) StaticFilesCacheMaxAge = Application.config.HTTP.StaticFilesCacheMaxAge;
                         headers['Cache-Control'] = 'public, max-age=' + StaticFilesCacheMaxAge;
                     }
-                    if (encodeFile) headers['Content-Encoding'] = 'deflate';
                     res.writeHead(200, headers);
 
-                    if (encodeFile) {
-                        let onError = function (err) {
-                            if (err) {
-                                res.end();
-                                console.error('Routes.static() error:', err);
-                            }
-                        }
-                        Application.lib.stream.pipeline(
-                            Application.lib.fs.createReadStream(filepath),
-                            Application.lib.zlib.createDeflate(),
-                            res,
-                            onError
-                        );
-                    } else {
-                        let readStream = Application.lib.fs.createReadStream(filepath);
-                        readStream.pipe(res);
-                        readStream.on('end', function () {
-                            res.end();
-                        });
-                    }
+                    let readStream = Application.lib.fs.createReadStream(filepath);
+                    readStream.pipe(res);
+                    readStream.on('end', function () {
+                        res.end();
+                    });
 
                 }
                 await worker();
@@ -430,18 +408,6 @@ let RequestHandler = class {
             if (empty(result)) {
                 res.end();
             } else {
-                let encodeResponse = this.encoding.check(req.headers['accept-encoding']);
-                if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.ResponseDeflate)) encodeResponse = encodeResponse && ("true" === Application.config.HTTP.ResponseDeflate);
-                if (encodeResponse) {
-                    result = await this.encoding.deflate(Buffer.from(result));
-                    this.res.setHeader(
-                        'Content-Encoding', 'deflate'
-                    )
-                }
-                this.res.setHeader(
-                    'Content-Length', result.length //correct only if encodeResponse true
-                )
-                
                 res.end(result);
             }
 
