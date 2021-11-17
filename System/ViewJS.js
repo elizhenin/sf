@@ -80,36 +80,43 @@ module.exports = class {
     }
 
     _parse() {
-        let codeString = '\'"`'; //string brackets
+        const codeString = '\'"`'; //string brackets
         let codeStringPosition = -1 // selected bracket
-        let codeOpen = '<?js'; // code begin marker
+        const codeOpen = '<?js'; // code begin marker
         let codeOpenPosition = 0; // cursor position in codeOpen string
-        let codeClose = '?>'; //code close marker
+        const codeClose = '?>'; //code close marker
         let codeClosePosition = 0; // cursor position in codeClose string
-        let html = this["@html"];
-        let states = ['html', 'codeOpen', 'codeClose', 'codeBody', 'codeString']
-        let currentState = 0;
-        let html_length = html.length;
+        const html = this["@html"];
+
+        const htmlState = 0,
+            codeOpenState = 1,
+            codeCloseState = 2,
+            codeBodyState = 3,
+            codeStringState = 4;
+
+        let currentState = htmlState;
+        
+        const html_length = html.length;
 
         let code = 'this["@html"] = `';
-        let toState = function (stateName) {
-            if ('codeBody' === stateName) {
+        let toState = function (State) {
+            if (codeBodyState === State) {
                 if (-1 === codeStringPosition) code += '`;\n';
             }
-            if ('html' === stateName && 2 === currentState) {
+            if (htmlState === State && codeCloseState === currentState) {
                 code += '\n this["@html"]+=`';
             }
             codeOpenPosition = 0;
             codeClosePosition = 0;
-            return states.indexOf(stateName)
+            return State;
         };
         for (let currentPosition = 0; currentPosition < html_length; currentPosition++) {
             let chr = html[currentPosition];
             if (-1 === codeStringPosition) {
                 switch (currentState) {
-                    case 0: {
+                    case htmlState: {
                         if (chr === codeOpen[codeOpenPosition]) {
-                            currentState = toState('codeOpen');
+                            currentState = toState(codeOpenState);
                             codeOpenPosition++;
                         } else {
                             if ("`" === chr) code += "\\";
@@ -117,33 +124,33 @@ module.exports = class {
                         };
                         break;
                     }
-                    case 1: {
+                    case codeOpenState: {
                         if (chr === codeOpen[codeOpenPosition]) {
                             if (codeOpenPosition === codeOpen.length - 1) {
-                                currentState = toState('codeBody');
+                                currentState = toState(codeBodyState);
                             }
                             codeOpenPosition++;
                         } else {
                             code += codeOpen.slice(0, codeOpenPosition) + chr
-                            currentState = toState('html');
+                            currentState = toState(htmlState);
                         }
                         break
                     }
-                    case 2: {
+                    case codeCloseState: {
                         if (chr === codeClose[codeClosePosition]) {
                             if (codeClosePosition === codeClose.length - 1) {
-                                currentState = toState('html');
+                                currentState = toState(htmlState);
                             }
                             codeClosePosition++;
                         } else {
                             code += codeClose.slice(0, codeClosePosition) + chr
-                            currentState = toState('codeBody');
+                            currentState = toState(codeBodyState);
                         }
                         break
                     }
-                    case 3: {
+                    case codeBodyState: {
                         if (chr === codeClose[codeClosePosition]) {
-                            currentState = toState('codeClose');
+                            currentState = toState(codeCloseState);
                             codeClosePosition++;
                         } else {
                             code += chr;
@@ -153,14 +160,14 @@ module.exports = class {
                         };
                         break
                     }
-                    case 4: {
+                    case codeStringState: {
                         break
                     }
                 }
             } else {
                 code += chr;
                 if (chr === codeString[codeStringPosition]) {
-                    currentState = toState('codeBody');
+                    currentState = toState(codeBodyState);
                     codeStringPosition = -1
                 }
             }
