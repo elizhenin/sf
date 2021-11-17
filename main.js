@@ -84,8 +84,7 @@
                 for (let key in Application.database) {
                     Application.DB[key] = require('knex')(Application.database[key]);
                 }
-                //set up memcache
-                global['MemCache'] = new Application.System.MemCache();
+
                 //start listening
                 Application.HTTP = new Application.System.Routes();
                 Application.Scheduler = new Application.System.Scheduler();
