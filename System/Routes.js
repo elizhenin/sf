@@ -6,7 +6,7 @@ module.exports = class Routes {
 
         this.server = Application.lib.http.createServer(async function (req, res) {
             ActiveListeners++;
-            Application.System.SrvLogger.access(req);
+            Application.System.SrvLogger.access(req,res);
             if (ActiveListeners <= MaxListeners) {
                 req.ip = req.headers['x-forwarded-for'] ||
                     req.socket.remoteAddress ||
@@ -31,7 +31,7 @@ module.exports = class Routes {
                         await Handler.router();
                         if (!Handler.Error) { //all ok
                             await Handler.send();
-                            Application.System.SrvLogger.access(req);
+                            Application.System.SrvLogger.access(req,res);
                         } else { //errors found
                             console.log(Handler.Error.toString())
                             Application.System.SrvLogger.error(req, Handler.Error);
@@ -154,10 +154,8 @@ let RequestHandler = class {
                     readStream.on('end', function () {
                         res.end();
                     });
-
                 }
                 await worker();
-
             }
         }
         return result;
@@ -191,7 +189,6 @@ let RequestHandler = class {
                     this.result = JSON.stringify(await Application.System.InternalAPI.ExecuteServerFunction(this.req, this.res)) //handler
                 }
             } else {
-
                 //detect route match
                 switch (type_of_route) {
                     case "object": {
@@ -252,7 +249,6 @@ let RequestHandler = class {
                     }
                 }
             }
-
         }
         return domainsRoutes;
     }
@@ -264,7 +260,6 @@ let RequestHandler = class {
            2) Controller.Action
            3) Controller._after
         */
-
 
         let result = false;
 
@@ -296,7 +291,6 @@ let RequestHandler = class {
                 this.Error = "Application.Controller." + Controller + "._after() causes problem " + " [" + e + "]";
                 console.log(e)
             }
-
         } else {
             this.Error = "Application.Controller." + Controller + " is undefined";
         }
@@ -374,7 +368,7 @@ let RequestHandler = class {
             } else {
                 acceptEncoding = acceptEncoding.split(',');
                 for (let i = 0; i < acceptEncoding.length; i++) {
-                    // according to notation 
+                    // according to notation
                     // Accept-Encoding: deflate, gzip;q=1.0, *;q=0.5
                     // weights are ignored, only deflate supported
                     acceptEncoding[i] = acceptEncoding[i].trim().toLowerCase().split(';')[0];
@@ -410,7 +404,6 @@ let RequestHandler = class {
             } else {
                 res.end(result);
             }
-
         }
     }
 }
@@ -521,5 +514,4 @@ let multipartFormParser = class {
         newObj[key] = value;
         return newObj;
     }
-
 }

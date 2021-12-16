@@ -2,10 +2,10 @@ module.exports = class SrvLogger{
     static access_file = Application.lib.path.join(Application._dirname, Application.config.Server.AccessLog)
     static error_file = Application.lib.path.join(Application._dirname, Application.config.Server.ErrorLog)
 
-    static access(req) {
+    static access(req,res) {
         let currDate = new Date();
         currDate = toRuTimeString(currDate) + ' ' + toRuDateString(currDate);
-        let row = req.ip + '  [' + currDate + '] ' + req.method + ' ' + req.headers['host'] + ' ' + req.url + ' ' + req.headers['user-agent'] + '\n';
+        let row = `${res.statusCode}\t[${currDate}]\t${req.method}\t${req.headers['host']}\t${req.url}\t${req.headers['user-agent']}\n`;
         Application.lib.fs.appendFile(this.access_file, row, (err) => {});
     }
 

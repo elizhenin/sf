@@ -36,6 +36,9 @@ module.exports = class {
 
     factory(str) {
         this["@html"] = str;
+        Object.defineProperty(this, "@html", {
+            enumerable: false
+        });
         return this;
     }
     async render(includeOnce_loaded = {}) {
@@ -52,15 +55,17 @@ module.exports = class {
         }
 
         let functionBody = '';
-        functionBody += `this["@loaded"] = arguments[arguments.length-1];\n`;
-        functionBody += `let include = async function(viewName){
+        functionBody+=`const print=function(s,c=this){c['@html']+=s}\n`;
+        functionBody+=`const echo=function(){for(let i in arguments) print(arguments[i])}\n`;
+        functionBody += `this["@loaded"] = arguments[arguments.length-1]; Object.defineProperty(this, "@loaded", {enumerable: false});\n`;
+        functionBody += `const include = async function(viewName){
             let v = new Application.System.ViewJS(viewName);
             `;
         functionBody += includeAssign;
         functionBody += `this["@html"]+= await v.render(this["@loaded"]);
             }\n`;
         functionBody +=
-            `let includeOnce = async function(viewName){
+            `const includeOnce = async function(viewName){
             if(this["@loaded"][viewName]){}else{this["@loaded"][viewName] = true;await include(viewName);}
         };\n`;
         functionBody += this._parse();
@@ -73,6 +78,11 @@ module.exports = class {
         } catch (e) {
             console.log('View name: ', this['@viewName']);
             console.log('Error: ', e);
+            let trace_body = functionBody.split("\n");
+            console.log('functionBody: ');
+            for(let i in trace_body){
+                console.log(i,trace_body[i])
+            }
             result = `<div><p>${e.toString()}</p><p>View name: <b>${this['@viewName']}</b></p></div>`;
         }
         func = undefined;
