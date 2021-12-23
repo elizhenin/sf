@@ -52,7 +52,7 @@ if (!empty(Application.sysTools)) {
 
 module.exports = class InternalAPI{
     static injectClientApiScript(controller) {
-        controller.result = controller.result.split('<head>').join(`<head>\n<script type="application/javascript" src="/@sf-internal-api/${controller._controller}"></script>`);
+        controller.result = controller.result.split('<head>').join(`<head>\n<script src="/@sf-internal-api/${controller._controller}"></script>`);
     }
 
     static async generateClientApiScript(controller) {
