@@ -77,9 +77,9 @@ module.exports = class {
             result = await func(...Object.values(data), includeOnce_loaded);
         } catch (e) {
             console.log('View name: ', this['@viewName']);
-            console.log('Error: ', e);
+            console.log(`${e.name}: ${e.message} \n${e.stack.split('\n')[1]}`);
             let trace_body = functionBody.split("\n");
-            console.log('functionBody: ');
+            console.log('Function body: ');
             for (let i in trace_body) {
                 console.log(i, trace_body[i])
             }
