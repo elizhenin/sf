@@ -52,7 +52,7 @@ module.exports = class Routes {
         this.server.listen(this.ListenPort);
         console.log("listen started on port " + this.ListenPort);
     }
-}
+};
 
 let RequestHandler = class {
     constructor(req, res) {
@@ -63,8 +63,8 @@ let RequestHandler = class {
         this.Error = false;
         this.result = false;
         //query string
-        let query = {}
-        let query_text = this.req.url.split('?')[1]
+        let query = {};
+        let query_text = this.req.url.split('?')[1];
         if (query_text) {
             let pairs = query_text.split('&');
             pairs.forEach(function (pair) {
@@ -72,12 +72,12 @@ let RequestHandler = class {
                 key = decodeURIComponent(key);
                 value = decodeURIComponent(value);
                 query[key] = value;
-            })
+            });
         }
         this.req.query = query;
 
         //cookies
-        let cookies = {}
+        let cookies = {};
         let cookies_text;
         if (this.req.headers.cookie) cookies_text = this.req.headers.cookie.trim();
         if (cookies_text) {
@@ -89,7 +89,7 @@ let RequestHandler = class {
                 key = decodeURIComponent(key.trim());
                 value = decodeURIComponent(value.trim());
                 cookies[key] = value;
-            })
+            });
         }
         this.req.cookies = cookies;
     }
@@ -125,27 +125,45 @@ let RequestHandler = class {
             if (result) {
                 let res = this.res;
                 let req = this.req;
-                let fileExt = filepath.split('.').reverse()[0].toString().toLowerCase();
+                let fileExt = filepath
+                    .split('.')
+                    .reverse()[0]
+                    .toString()
+                    .toLowerCase();
                 async function worker() {
                     let ext_to_mime = function (ext) {
                         let result = "text/plain; charset=utf-8";
                         let mime = Application.System.MimeTypes;
                         if (!empty(mime[ext])) {
-                            result = mime[ext]
+                            result = mime[ext];
                         }
                         return result;
-                    }
+                    };
                     let headers = {
                         'Content-Type': ext_to_mime(fileExt),
                         'Content-Length': stat.size
-                    }
+                    };
 
                     let StaticFilesCache = true;
-                    if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.StaticFilesCache)) StaticFilesCache = StaticFilesCache && ("true" === Application.config.HTTP.StaticFilesCache);
+                    if (
+                        !empty(Application.config.HTTP) &&
+                        !empty(Application.config.HTTP.StaticFilesCache)
+                    )
+                        StaticFilesCache =
+                            StaticFilesCache &&
+                            'true' === Application.config.HTTP.StaticFilesCache;
                     if (StaticFilesCache) {
                         let StaticFilesCacheMaxAge = 31536000;
-                        if (!empty(Application.config.HTTP) && !empty(Application.config.HTTP.StaticFilesCacheMaxAge)) StaticFilesCacheMaxAge = Application.config.HTTP.StaticFilesCacheMaxAge;
-                        headers['Cache-Control'] = 'public, max-age=' + StaticFilesCacheMaxAge;
+                        if (
+                            !empty(Application.config.HTTP) &&
+                            !empty(
+                                Application.config.HTTP.StaticFilesCacheMaxAge
+                            )
+                        )
+                            StaticFilesCacheMaxAge =
+                                Application.config.HTTP.StaticFilesCacheMaxAge;
+                        headers['Cache-Control'] =
+                            'public, max-age=' + StaticFilesCacheMaxAge;
                     }
                     res.writeHead(200, headers);
 
@@ -171,7 +189,7 @@ let RequestHandler = class {
             let domain = domains[domains_index];
             if (!empty(clientHost.match(domain))) {
                 domainsRoutes = Application.routes[domain];
-                break
+                break;
             }
         }
 
@@ -244,7 +262,7 @@ let RequestHandler = class {
                             Controller += "." + action;
                             action = "index";
                         }
-                        await this.handler(Controller, action)
+                        await this.handler(Controller, action);
                         break;
                     }
                 }
@@ -326,9 +344,9 @@ let RequestHandler = class {
                         key = decodeURIComponent(key);
                         value = decodeURIComponent(value);
                         result[key] = value;
-                    })
+                    });
                 }
-                return result
+                return result;
             },
             "multipart/form-data": async function (body, ContentTypeParams) {
                 let multipart = new multipartFormParser(ContentTypeParams);
@@ -382,18 +400,18 @@ let RequestHandler = class {
                 const deflate = Application.lib.zlib.deflate;
                 deflate(payload, function (err, result) {
                     if (err) {
-                        reject(err)
-                    } else resolve(result)
-                })
-            })
+                        reject(err);
+                    } else resolve(result);
+                });
+            });
         }
-    }
+    };
 
     async send(result = undefined) {
         if (empty(result)) result = this.result;
         let req = this.req;
         let res = this.res;
-        if (typeof result != "string") {
+        if (typeof result != 'string') {
             if (Buffer.isBuffer(result)) {
                 result = result.toString();
             } else result = JSON.stringify(result);
@@ -406,7 +424,7 @@ let RequestHandler = class {
             }
         }
     }
-}
+};
 
 let multipartFormParser = class {
     /**
@@ -514,4 +532,4 @@ let multipartFormParser = class {
         newObj[key] = value;
         return newObj;
     }
-}
+};
