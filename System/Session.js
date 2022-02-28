@@ -16,6 +16,7 @@ module.exports = class Session{
         constructor(session_id = '@') {
             if (empty(Application.System.Session._storage[session_id])) Application.System.Session._storage[session_id] = {};
             this._storage = Application.System.Session._storage[session_id];
+            this._session_id = session_id;
         }
 
         get(key, alt) {
@@ -38,6 +39,7 @@ module.exports = class Session{
             session_id = req.cookies[Application.System.Session._cookieName];
         } else session_id = GUID();
 
+        req[Application.System.Session._cookieName] = session_id;
         res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${session_id}; HttpOnly; Path=/;Max-Age=${CookieMaxAge}`);
         Application.System.Session._lastAccess[session_id] = Date.now();
 

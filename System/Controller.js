@@ -20,7 +20,7 @@ module.exports = class Controller {
         }
         //define session instance
         try {
-            this.Session = new Application.System.Session.instance(this.req.cookies[Application.System.Session._cookieName]);
+            this.Session = new Application.System.Session.instance(this.req[Application.System.Session._cookieName]);
         } catch (e) {}
     }
     async _before() {

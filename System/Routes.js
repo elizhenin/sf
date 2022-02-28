@@ -1,13 +1,13 @@
 module.exports = class Routes {
     constructor() {
         let MaxListeners = Application.config.Server.MaxListeners * 1;
-        let ActiveListeners = 0;
         this.ListenPort = Application.config.Server.Port * 1;
 
         this.server = Application.lib.http.createServer(async function (req, res) {
-            ActiveListeners++;
+            let ActiveListeners = await getActiveListeners();
+          
             Application.System.SrvLogger.access(req,res);
-            if (ActiveListeners <= MaxListeners) {
+            if (ActiveListeners < MaxListeners) {
                 req.ip = req.headers['x-forwarded-for'] ||
                     req.socket.remoteAddress ||
                     null;
@@ -43,8 +43,8 @@ module.exports = class Routes {
                 Application.System.SrvLogger.error(req, MaxListeners + ' exceeded');
                 res.end('Error: MaxListeners exceeded, try later');
             }
-            ActiveListeners--;
         });
+
         this.server.on('clientError', (err, socket) => {
             Application.System.SrvLogger.error({}, err);
             socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
@@ -53,6 +53,15 @@ module.exports = class Routes {
         console.log("listen started on port " + this.ListenPort);
     }
 };
+
+let getActiveListeners = function(){
+    return new Promise(function(resolve,reject){
+    Application.HTTP.server.getConnections(
+        function(error, count) {
+            resolve(count)
+        });
+})
+}
 
 let RequestHandler = class {
     constructor(req, res) {
