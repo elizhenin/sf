@@ -11,8 +11,8 @@ module.exports = class Routes {
                 req.ip = req.headers['x-forwarded-for'] ||
                     req.socket.remoteAddress ||
                     null;
-                res.redirect = function (url) {
-                    this.statusCode = 302;
+                    res.redirect = function (url,status = 302) {
+                        this.statusCode = status;
                     this.setHeader(
                         'Location', url
                     )
