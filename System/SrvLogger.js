@@ -5,7 +5,7 @@ module.exports = class SrvLogger{
     static access(req,res) {
         let currDate = new Date();
         currDate = toRuTimeString(currDate) + ' ' + toRuDateString(currDate);
-        let row = `${res.statusCode}\t[${currDate}]\t${req.method}\t${req.headers['host']}\t${req.url}\t${req.headers['user-agent']}\n`;
+        let row = `${res.statusCode}\t${req.ip}\t[${currDate}]\t${req.method}\t${req.headers['host']}\t${req.url}\t${req.headers['user-agent']}\n`;
         Application.lib.fs.appendFile(this.access_file, row, (err) => {});
     }
 
