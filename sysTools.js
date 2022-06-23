@@ -3,6 +3,14 @@ module.exports = function sysTools() {
     if (typeof global != "undefined") Context = global;
     if (typeof window != "undefined") Context = window;
     if (Context) {
+        Context.Now = function(){
+            if(empty(arguments)) return +Date.now()
+            else{
+              let r = new Date();
+              for(let f of arguments) r = f(r);
+              return r
+            }
+        }
         Context.ObjSelector = function (SourceObj, ClassPath, createIfUndefined = false) {
             //recusive get object by class path "className1.className2.className3.[etc N times].."
             let ClassPathArray = ClassPath.split('.');
