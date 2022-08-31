@@ -13,14 +13,16 @@
         "cluster": "^0.7.7",
         "cyrillic-to-translit-js": "^3.1.0",
         "jsdom": "^16.6.0",
-        "knex": "^0.95.9",
+        "knex": "^0.95.15",
         "mysql": "^2.18.1",
         "mysql2": "^2.2.5",
         "nodemailer": "^6.6.1",
         "oracledb": "^4.2.0",
         "path-to-regexp": "^6.2.0",
-        "pg": "^7.18.2",
-        "sqlite3": "4.2.0",
+        "pg": "^8.4.0",
+        "request": "^2.88.2",
+        "request-promise-native": "^1.0.9",
+        "sqlite3": "^4.2.0",
         "terser": "^5.6.0"
     }
 }

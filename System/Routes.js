@@ -6,13 +6,13 @@ module.exports = class Routes {
         this.server = Application.lib.http.createServer(async function (req, res) {
             let ActiveListeners = await getActiveListeners();
           
-            Application.System.SrvLogger.access(req,res);
+            // Application.System.SrvLogger.access(req,res);
             if (ActiveListeners < MaxListeners) {
                 req.ip = req.headers['x-forwarded-for'] ||
                     req.socket.remoteAddress ||
                     null;
-                    res.redirect = function (url,status = 302) {
-                        this.statusCode = status;
+                res.redirect = function (url) {
+                    this.statusCode = 302;
                     this.setHeader(
                         'Location', url
                     )

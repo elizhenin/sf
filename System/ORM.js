@@ -95,7 +95,7 @@ module.exports = class ORM {
     async factory(modelName = undefined) {
         let model;
         if (this._db === "default") model = ObjSelector(Application, 'ORM', true);
-        else  model = ObjSelector(Application, 'ORM.' + this._db, true);
+        else  model = ObjSelector(Application, 'ORM.' + this._db, true)
 
         let models = [];
         if(empty(modelName)){

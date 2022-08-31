@@ -3,6 +3,7 @@ Application.lib.path = require('path');
 Application.lib.fs = require('fs');
 Application.lib.fs_promises = require('fs').promises;
 Application.lib.nodemailer = require('nodemailer');
+Application.lib.request = require('request-promise-native');
 Application.lib.cyrillicToTranslit = new require("cyrillic-to-translit-js")();
 Application.lib.jsdom = require('jsdom');
 Application.lib.StrUnEscape = require('backslash');

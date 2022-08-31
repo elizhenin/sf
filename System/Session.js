@@ -8,7 +8,7 @@ let CookieMaxAge = 900; //15 minutes
 if (!empty(Application.config.Session) && !empty(Application.config.Session.CookieMaxAge)) CookieMaxAge = Application.config.Session.CookieMaxAge;
 
 
-module.exports = class Session{
+module.exports = class Session {
     static _cookieName = _cookieName
     static _storage = {}
     static _lastAccess = {}
@@ -40,9 +40,8 @@ module.exports = class Session{
         } else session_id = GUID();
 
         req[Application.System.Session._cookieName] = session_id;
-        res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${session_id}; HttpOnly; Path=/;Max-Age=${CookieMaxAge}`);
+        res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${session_id};HttpOnly;Path=/;Max-Age=${CookieMaxAge};SameSite=None;Secure`);
         Application.System.Session._lastAccess[session_id] = Date.now();
-
         return true;
     }
 }

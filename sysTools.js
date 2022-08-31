@@ -4,7 +4,7 @@ module.exports = function sysTools() {
     if (typeof window != "undefined") Context = window;
     if (Context) {
         Context.Now = function(){
-            if(empty(arguments)) return +Date.now()
+            if(empty(arguments)) return new Date().getTime()
             else{
               let r = new Date();
               for(let f of arguments) r = f(r);

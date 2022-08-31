@@ -84,7 +84,7 @@ module.exports = class InternalAPI{
                 clientMethods.push(methodF);
             }
             if (method.startsWith('server_')) {
-                let methodF = `window.${method} = async function(){return await SF_servercall("${method.slice(('server_').length)}",arguments)}`;
+                let methodF = `window.${method} = async function(...FuncArgs){return await SF_servercall("${method.slice(('server_').length)}",FuncArgs)}`;
                 serverMethods.push(methodF);
             }
         })
