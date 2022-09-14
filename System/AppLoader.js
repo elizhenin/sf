@@ -55,6 +55,18 @@ module.exports = class AppLoader {
                             if (classname) global[classname] = rootNode[ObjName]
                             break
                         }
+                        case "ini":{
+                            let ObjName = item.slice(0, -4); //remove ".ini" symbols from end
+                            //add this ini object to namespace
+                            let iniParser = require(Application.lib.path.join(Application.config.Directories.System, 'IniParser.js'));
+                            rootNode[ObjName] = new iniParser(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
+                            //global classname
+                            let filename = Application.lib.path.join(Directory, item)
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split('/').join('_')
+                            if (2 > classname.split('_').length) classname = false
+                            if (classname) global[classname] = rootNode[ObjName]
+                            break
+                        }
                         case "html": {
                             let ObjName = item.slice(0, -5); //remove ".html" symbols from end
                             //add this html to namespace
