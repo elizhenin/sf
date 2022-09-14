@@ -13,38 +13,49 @@ module.exports = class AppLoader {
                     SubcollectionList.push(item);
                     rootNode[item] = {}
                 } else {
-                    if ('js' === item.split('.').reverse()[0].toLowerCase()) {
-                        let ObjName = item.slice(0, -3); //remove ".js" symbols from end
-                        //add this js to namespace
-                        let _init = function (firstTry = false) {
-                            let filename = Application.lib.path.join(Directory, item);
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -3).split('/').join('_');
-                            if (2 > classname.split('_').length) classname = false;
-                            try {
-                                rootNode[ObjName] = require(filename);
-                                if (classname) global[classname] = rootNode[ObjName];
-                                if (!firstTry) {
-                                    Application._appReady = true;
-                                    console.log(filename + ' now ready')
+                    switch(item.split('.').reverse()[0].toLowerCase()){
+                        case "js":{
+                            let ObjName = item.slice(0, -3); //remove ".js" symbols from end
+                            //add this js to namespace
+                            let _init = function (firstTry = false) {
+                                let filename = Application.lib.path.join(Directory, item);
+                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -3).split('/').join('_');
+                                if (2 > classname.split('_').length) classname = false;
+                                try {
+                                    rootNode[ObjName] = require(filename);
+                                    if (classname) global[classname] = rootNode[ObjName];
+                                    if (!firstTry) {
+                                        Application._appReady = true;
+                                        console.log(filename + ' now ready')
+                                    }
+                                } catch (e) {
+                                    Application._appReady = false;
+                                    if (
+                                        "TypeError: Class extends value undefined is not a constructor or null" === e.toString()
+                                    ) {
+                                        console.log(`${filename} waiting retry [${e}]`)
+                                    } else {
+                                        console.log(e);
+                                        console.log(`\n${filename} waiting retry`)
+                                    }
+                                    setTimeout(_init, 100)
                                 }
-                            } catch (e) {
-                                Application._appReady = false;
-                                if (
-                                    "TypeError: Class extends value undefined is not a constructor or null" === e.toString()
-                                ) {
-                                    console.log(`${filename} waiting retry [${e}]`)
-                                } else {
-                                    console.log(e);
-                                    console.log(`\n${filename} waiting retry`)
-                                }
-                                setTimeout(_init, 100)
                             }
+                            _init(true);
+                            break
                         }
-                        _init(true);
-                    } else if ('html' === item.split('.').reverse()[0].toLowerCase()) {
-                        let ObjName = item.slice(0, -5); //remove ".html" symbols from end
-                        //add this html to namespace
-                        rootNode[ObjName] = Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8');
+                        case "json":{
+                            let ObjName = item.slice(0, -5); //remove ".json" symbols from end
+                            //add this json object to namespace
+                            rootNode[ObjName] = JSON.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
+                            break
+                        }
+                        case "html":{
+                            let ObjName = item.slice(0, -5); //remove ".html" symbols from end
+                            //add this html to namespace
+                            rootNode[ObjName] = Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8');
+                            break
+                        }
                     }
                 }
             }
