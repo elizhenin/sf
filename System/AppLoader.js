@@ -13,8 +13,8 @@ module.exports = class AppLoader {
                     SubcollectionList.push(item);
                     rootNode[item] = {}
                 } else {
-                    switch(item.split('.').reverse()[0].toLowerCase()){
-                        case "js":{
+                    switch (item.split('.').reverse()[0].toLowerCase()) {
+                        case "js": {
                             let ObjName = item.slice(0, -3); //remove ".js" symbols from end
                             //add this js to namespace
                             let _init = function (firstTry = false) {
@@ -44,13 +44,18 @@ module.exports = class AppLoader {
                             _init(true);
                             break
                         }
-                        case "json":{
+                        case "json": {
                             let ObjName = item.slice(0, -5); //remove ".json" symbols from end
                             //add this json object to namespace
                             rootNode[ObjName] = JSON.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
+                            //global classname
+                            let filename = Application.lib.path.join(Directory, item)
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -5).split('/').join('_')
+                            if (2 > classname.split('_').length) classname = false
+                            if (classname) global[classname] = rootNode[ObjName]
                             break
                         }
-                        case "html":{
+                        case "html": {
                             let ObjName = item.slice(0, -5); //remove ".html" symbols from end
                             //add this html to namespace
                             rootNode[ObjName] = Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8');
