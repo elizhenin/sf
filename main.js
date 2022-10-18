@@ -28,7 +28,7 @@
     Application.config.Directories = {};
     Application.config.Directories.Root = "";
     Application.config.Directories.System = "System";
-    Application.config.Directories.App = "App";
+    Application.config.Directories.App = "Application";
     Application.config.Directories.AppPublic = "Public";
     for (key in Application.config.Directories) {
         Application.config.Directories[key] = Application.lib.path.join(Application._dirname, Application.config.Directories[key]);
