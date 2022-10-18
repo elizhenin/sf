@@ -3,12 +3,12 @@ module.exports = function sysTools() {
     if (typeof global != "undefined") Context = global;
     if (typeof window != "undefined") Context = window;
     if (Context) {
-        Context.Now = function(){
-            if(empty(arguments)) return new Date().getTime()
-            else{
-              let r = new Date();
-              for(let f of arguments) r = f(r);
-              return r
+        Context.Now = function () {
+            if (empty(arguments)) return new Date().getTime()
+            else {
+                let r = new Date();
+                for (let f of arguments) r = f(r);
+                return r
             }
         }
         Context.ObjSelector = function (SourceObj, ClassPath, createIfUndefined = false) {
@@ -608,15 +608,27 @@ module.exports = function sysTools() {
             return struct2flat(tree);
         };
         //other
+        Context._GUID_UIQ_TRAILING_COUNTER1 = 0
+        Context._GUID_UIQ_TRAILING_COUNTER2 = 0
         Context.GUID = function () {
             //not as in RFC, but unique enough and correct in validators. JS is 53-bits integer timestamp and no MICROseconds available
             let guid = '';
             //prepare part using random
-            guid = '-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            guid = '-4xxx-yxxx-xxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 var r = Math.random() * 16 | 0,
                     v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
+            let _trailing_char1 = _GUID_UIQ_TRAILING_COUNTER1.toString(16)
+            let _trailing_char2 = _GUID_UIQ_TRAILING_COUNTER2.toString(16)
+            _GUID_UIQ_TRAILING_COUNTER1 += 1;
+            if (_GUID_UIQ_TRAILING_COUNTER1 > 15) {
+                _GUID_UIQ_TRAILING_COUNTER1 = 0;
+                _GUID_UIQ_TRAILING_COUNTER2 += 1;
+                if (_GUID_UIQ_TRAILING_COUNTER2 > 15) _GUID_UIQ_TRAILING_COUNTER2 = 0;
+            }
+            guid = `${guid}${_trailing_char2}${_trailing_char1}`
+
             //prepare timestamp in hex in pattern 'hhhhhhhh-hhhh-'
             let timestamp = (function (S) {
                 return `${S.slice(0,8)}-${S.slice(-4)}`

@@ -40,7 +40,7 @@ module.exports = class Session {
         } else session_id = GUID();
 
         req[Application.System.Session._cookieName] = session_id;
-        res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${session_id};HttpOnly;Path=/;Max-Age=${CookieMaxAge};SameSite=None;Secure`);
+        res.setHeader('Set-Cookie', `${Application.System.Session._cookieName}=${session_id}; HttpOnly; Path=/;Max-Age=${CookieMaxAge};SameSite=None;Secure`);
         Application.System.Session._lastAccess[session_id] = Date.now();
         return true;
     }
