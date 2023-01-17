@@ -698,6 +698,11 @@ module.exports = function sysTools() {
             // y: positions of allowed hex digits
 
             guid = new Array(37);
+            guid[9] = '-';
+            guid[14] = '-';
+            guid[15] = '4';
+            guid[19] = '-';
+            guid[24] = '-';
             // replace Y with allowed digit
             guid[20] = yChar.atRandom();
             // replace X positions with randoms
