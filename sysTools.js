@@ -1,4 +1,22 @@
 module.exports = function sysTools() {
+    /* Extensions to basic types */
+    
+    Array.prototype.atRandom = function () {return this[Math.floor(Math.random() * this.length)]};
+    Object.defineProperty(Array.prototype, "atRandom", {enumerable: false });
+    
+    Array.prototype.do = function (aBlock) {const l = this.length;if(l) for(let i = 0;i< l;i++) aBlock(this[i]);return this};
+    Object.defineProperty(Array.prototype, "do", { enumerable: false });
+
+    Number.prototype.to = function (num) { let r = [];for (let i = this.valueOf(); i <= num; i++) {r.push(i)};return r};
+    Object.defineProperty(Number.prototype, "to", { enumerable: false });
+    
+    Boolean.prototype.ifTrue = function (aBlock) {if (this == true) aBlock()};
+    Object.defineProperty(Boolean.prototype, "ifTrue", { enumerable: false });
+    
+    Boolean.prototype.ifFalse = function (aBlock) {if (this == false) aBlock()};
+    Object.defineProperty(Boolean.prototype, "ifTrue", { enumerable: false });
+    
+    /* Addons */
     let Context = false;
     if (typeof global != "undefined") Context = global;
     if (typeof window != "undefined") Context = window;
@@ -366,7 +384,7 @@ module.exports = function sysTools() {
 
         Context.sha1 = function (s) {
 
-            let byteToUint8Array = function (byteArray) {
+            const byteToUint8Array = function (byteArray) {
                 var uint8Array = new Uint8Array(byteArray.length);
                 for (var i = 0; i < uint8Array.length; i++) {
                     uint8Array[i] = byteArray[i];
@@ -376,7 +394,7 @@ module.exports = function sysTools() {
             }
             // author Hsun
             // Message padding bits, complement the length.
-            let fillString = function (str) {
+            const fillString = function (str) {
                 var blockAmount = ((str.length + 8) >> 6) + 1,
                     blocks = [],
                     i;
@@ -393,8 +411,8 @@ module.exports = function sysTools() {
                 return blocks;
             }
             // Convert the input binary array to a hexadecimal string.
-            let binToHex = function (binArray) {
-                var hexString = "0123456789abcdef",
+            const binToHex = function (binArray) {
+                let hexString = "0123456789abcdef",
                     str = "",
                     i;
 
@@ -492,46 +510,103 @@ module.exports = function sysTools() {
             // string and returns the message digest in hexadecimal.
             return binToHex(core(fillString(byteToUint8Array(toUTF8Array(s)))));
         }
-
-        Context.usort = function (inputArr, sorter) {
-
-            let valArr = []
-            let k = ''
-            let i = 0
-            let sortByReference = false
-            let populateArr = {}
-
-            if (typeof sorter === 'string') {
-                sorter = this[sorter]
-            } else if (Object.prototype.toString.call(sorter) === '[object Array]') {
-                sorter = this[sorter[0]][sorter[1]]
-            }
-
-            let iniVal = 'on'
-            sortByReference = iniVal === 'on'
-            populateArr = sortByReference ? inputArr : populateArr
-
-            for (k in inputArr) {
-                // Get key and value arrays
-                if (inputArr.hasOwnProperty(k)) {
-                    valArr.push(inputArr[k])
-                    if (sortByReference) {
-                        delete inputArr[k]
+        Context.sha256 = function (s) {
+            let asciiArray = toUTF8Array(s);
+            function rightRotate(value, amount) {
+                return (value>>>amount) | (value<<(32 - amount));
+            };
+            
+            const mathPow = Math.pow;
+            const maxWord = mathPow(2, 32);
+            const lengthProperty = 'length'
+            let i, j; // Used as a counter across the whole file
+            let result = ''
+        
+            const words = [];
+            const asciiBitLength = asciiArray[lengthProperty]*8;
+            
+            //* caching results is optional - remove/add slash from front of this line to toggle
+            // Initial hash value: first 32 bits of the fractional parts of the square roots of the first 8 primes
+            // (we actually calculate the first 64, but extra values are just ignored)
+            var hash = sha256.h = sha256.h || [];
+            // Round constants: first 32 bits of the fractional parts of the cube roots of the first 64 primes
+            const k = sha256.k = sha256.k || [];
+            let primeCounter = k[lengthProperty];
+            /*/
+            var hash = [], k = [];
+            var primeCounter = 0;
+            //*/
+        
+            const isComposite = {};
+            for (let c = 2; primeCounter < 64; c++) {
+                if (!isComposite[c]) {
+                    for (i = 0; i < 313; i += c) {
+                        isComposite[i] = c;
                     }
+                    hash[primeCounter] = (mathPow(c, .5)*maxWord)|0;
+                    k[primeCounter++] = (mathPow(c, 1/3)*maxWord)|0;
                 }
             }
-            try {
-                valArr.sort(sorter)
-            } catch (e) {
-                return false
+            
+            asciiArray.push(0x80) // Append Ƈ' bit (plus zero padding)
+            while (asciiArray[lengthProperty]%64 - 56) asciiArray.push(0x00) // More zero padding
+            for (i = 0; i < asciiArray[lengthProperty]; i++) {
+                j = asciiArray[i];
+                if (j>>8) return; // ASCII check: only accept characters in range 0-255
+                words[i>>2] |= j << ((3 - i)%4)*8;
             }
-            for (i = 0; i < valArr.length; i++) {
-                // Repopulate the old array
-                populateArr[i] = valArr[i]
+            words[words[lengthProperty]] = ((asciiBitLength/maxWord)|0);
+            words[words[lengthProperty]] = (asciiBitLength)
+            
+            // process each chunk
+            for (j = 0; j < words[lengthProperty];) {
+                var w = words.slice(j, j += 16); // The message is expanded into 64 words as part of the iteration
+                var oldHash = hash;
+                // This is now the undefinedworking hash", often labelled as variables a...g
+                // (we have to truncate as well, otherwise extra entries at the end accumulate
+                hash = hash.slice(0, 8);
+                
+                for (i = 0; i < 64; i++) {
+                    const i2 = i + j;
+                    // Expand the message into 64 words
+                    // Used below if 
+                    const w15 = w[i - 15], w2 = w[i - 2];
+        
+                    // Iterate
+                    const a = hash[0], e = hash[4];
+                    const temp1 = hash[7]
+                        + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) // S1
+                        + ((e&hash[5])^((~e)&hash[6])) // ch
+                        + k[i]
+                        // Expand the message schedule if needed
+                        + (w[i] = (i < 16) ? w[i] : (
+                                w[i - 16]
+                                + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15>>>3)) // s0
+                                + w[i - 7]
+                                + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2>>>10)) // s1
+                            )|0
+                        );
+                    // This is only used once, so *could* be moved below, but it only saves 4 bytes and makes things unreadble
+                    const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) // S0
+                        + ((a&hash[1])^(a&hash[2])^(hash[1]&hash[2])); // maj
+                    
+                    hash = [(temp1 + temp2)|0].concat(hash); // We don't bother trimming off the extra ones, they're harmless as long as we're truncating when we do the slice()
+                    hash[4] = (hash[4] + temp1)|0;
+                }
+                
+                for (i = 0; i < 8; i++) {
+                    hash[i] = (hash[i] + oldHash[i])|0;
+                }
             }
-
-            return sortByReference || populateArr
-        }
+            
+            for (i = 0; i < 8; i++) {
+                for (j = 3; j + 1; j--) {
+                    const b = (hash[i]>>(j*8))&255;
+                    result += ((b < 16) ? 0 : '') + b.toString(16);
+                }
+            }
+            return result;
+        };
 
         //for data post-parse
         Context.toRuDateString = function (d) {
@@ -608,34 +683,39 @@ module.exports = function sysTools() {
             return struct2flat(tree);
         };
         //other
-        Context._GUID_UIQ_TRAILING_COUNTER1 = 0
-        Context._GUID_UIQ_TRAILING_COUNTER2 = 0
+        
         Context.GUID = function () {
             //not as in RFC, but unique enough and correct in validators. JS is 53-bits integer timestamp and no MICROseconds available
-            let guid = '';
-            //prepare part using random
-            guid = '-4xxx-yxxx-xxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                var r = Math.random() * 16 | 0,
-                    v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-            let _trailing_char1 = _GUID_UIQ_TRAILING_COUNTER1.toString(16)
-            let _trailing_char2 = _GUID_UIQ_TRAILING_COUNTER2.toString(16)
-            _GUID_UIQ_TRAILING_COUNTER1 += 1;
-            if (_GUID_UIQ_TRAILING_COUNTER1 > 15) {
-                _GUID_UIQ_TRAILING_COUNTER1 = 0;
-                _GUID_UIQ_TRAILING_COUNTER2 += 1;
-                if (_GUID_UIQ_TRAILING_COUNTER2 > 15) _GUID_UIQ_TRAILING_COUNTER2 = 0;
-            }
-            guid = `${guid}${_trailing_char2}${_trailing_char1}`
+            let guid, yChar, xChar, timestamp;
+            yChar = ['8', '9', 'a', 'b'];
+            xChar = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+            // in timestamp and guid arrays ignore the 0 index and work from 1
+            // ommit the 0 index item at the end
+            timestamp = ' 0' + Context.Now().toString(16);
+            // GUID mask is hhhhhhhh-hhhh-4xxx-yxxx-xxxxxxxxxxxx
+            // h: positions of timestamp hex digits
+            // x: positions of random hex digits
+            // y: positions of allowed hex digits
 
-            //prepare timestamp in hex in pattern 'hhhhhhhh-hhhh-'
-            let timestamp = (function (S) {
-                return `${S.slice(0,8)}-${S.slice(-4)}`
-            })(('0' + (+Date.now()).toString(16)).slice(-12));
-            //add timestamp to guid
-            guid = timestamp + guid;
-            return guid;
+            guid = new Array(37);
+            // replace Y with allowed digit
+            guid[20] = yChar.atRandom();
+            // replace X positions with randoms
+            (16).to(18).do(i => {
+                guid[i] = xChar.atRandom()
+            });
+
+            (21).to(23).do(i => {
+                guid[i] = xChar.atRandom()
+            });
+            (25).to(36).do(i => {
+                guid[i] = xChar.atRandom()
+            });
+            // replace H positions with timestamp hex digits
+            (1).to(8).do(i => {guid[i] = timestamp[i]});
+            (10).to(13).do(i => {guid[i] = timestamp[i - 1]});
+            guid.shift();guid = guid.join('');
+            return guid
         }
         /*
 CryptoJS v3.1.2
