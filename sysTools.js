@@ -10,12 +10,18 @@ module.exports = function sysTools() {
     Number.prototype.to = function (num) { let r = [];for (let i = this.valueOf(); i <= num; i++) {r.push(i)};return r};
     Object.defineProperty(Number.prototype, "to", { enumerable: false });
     
-    Boolean.prototype.ifTrue = function (aBlock) {if (this == true) aBlock()};
+    Boolean.prototype.ifTrue = function (aBlock) {if (this == true){aBlock()}; return this};
     Object.defineProperty(Boolean.prototype, "ifTrue", { enumerable: false });
     
-    Boolean.prototype.ifFalse = function (aBlock) {if (this == false) aBlock()};
-    Object.defineProperty(Boolean.prototype, "ifTrue", { enumerable: false });
+    Boolean.prototype.ifFalse = function (aBlock) {if (this == false){aBlock()}; return this};
+    Object.defineProperty(Boolean.prototype, "ifFalse", { enumerable: false });
     
+    Function.prototype.whileTrue = function (aBlock) {while (this() == true){aBlock()}; return this};
+    Object.defineProperty(Function.prototype, "whileTrue", { enumerable: false });
+
+    Function.prototype.whileFalse = function (aBlock) {while (this() == false){aBlock()}; return this};
+    Object.defineProperty(Function.prototype, "whileFalse", { enumerable: false });
+  
     /* Addons */
     let Context = false;
     if (typeof global != "undefined") Context = global;
