@@ -78,15 +78,24 @@ module.exports = function sysTools() {
             return isEmpty;
         };
         Context.htmlspecialchars = function (string) {
-            return string.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('\'').join('&apos;').split('"').join('&quot;');
+            let result = string;
+            if (!empty(string))
+            result = string.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('\'').join('&apos;').split('"').join('&quot;');
+            return result
         };
         Context.htmlspecialchars_decode = function (string) {
-            return string.split('&amp;').join('&').split('&lt;').join('<').split('&gt;').join('>').split('&apos;').join('\'').split('&quot;').join('"');
+            let result = string;
+            if (!empty(string))
+            result = string.split('&amp;').join('&').split('&lt;').join('<').split('&gt;').join('>').split('&apos;').join('\'').split('&quot;').join('"');
+            return result
         };
 
         Context.striptags = function (string) {
             let regex = /(<([^>]+)>)/ig;
-            return string.replace(regex, "");
+            let result = string;
+            if (!empty(string))
+            result = string.replace(regex, "");
+            return result
         };
 
         Context.trim = function (string) {
