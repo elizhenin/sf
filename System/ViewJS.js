@@ -53,27 +53,31 @@ module.exports = class {
             data[i] = this[i];
             includeAssign += `v.${i} = ${i};\n`;
         }
-
+        let functionArgs = Object.keys(data);
         let functionBody = '';
-        functionBody += `const print=function(s,c=this){c['@html']+=s}\n`;
+        functionBody += `(${functionArgs.join(', ')}, includeOnce_loaded)=>{\n`;
+        functionBody += `return new Promise(async function(resolve,reject){\n`;
+        functionBody += `let _this = {}\n`;
+        functionBody += `const print=function(s,c=_this){c['@html']+=s}\n`;
         functionBody += `const echo=function(){for(let i in arguments) print(arguments[i])}\n`;
-        functionBody += `this["@loaded"] = arguments[arguments.length-1]; Object.defineProperty(this, "@loaded", {enumerable: false});\n`;
+        functionBody += `_this["@loaded"] = arguments[arguments.length-1]; Object.defineProperty(_this, "@loaded", {enumerable: false});\n`;
         functionBody += `const include = async function(viewName){
             let v = new Application.System.ViewJS(viewName);
             `;
         functionBody += includeAssign;
-        functionBody += `this["@html"]+= await v.render(this["@loaded"]);
+        functionBody += `_this["@html"]+= await v.render(_this["@loaded"]);
             }\n`;
         functionBody +=
             `const includeOnce = async function(viewName){
-            if(this["@loaded"][viewName]){}else{this["@loaded"][viewName] = true;await include(viewName);}
+            if(_this["@loaded"][viewName]){}else{_this["@loaded"][viewName] = true;await include(viewName);}
         };\n`;
-        functionBody += this._parse();
-        let functionArgs = Object.keys(data);
+        functionBody += this._parse()+`\n`;
+        functionBody += `})\n}\n`;
+      
         let AsyncFunction = (async function () {}).constructor;
         let result = '';
         try {
-            let func = new AsyncFunction(functionArgs, functionBody);
+            let func = eval(functionBody);
             result = await func(...Object.values(data), includeOnce_loaded);
         } catch (e) {
             console.log('View name: ', this['@viewName']);
@@ -107,13 +111,13 @@ module.exports = class {
 
         const html_length = html.length;
 
-        let code = 'this["@html"] = `';
+        let code = '_this["@html"] = `';
         let toState = function (State) {
             if (codeBodyState === State) {
                 if (-1 === codeStringPosition) code += '`;\n';
             }
             if (htmlState === State && codeCloseState === currentState) {
-                code += '\n this["@html"]+=`';
+                code += '\n _this["@html"]+=`';
             }
             codeOpenPosition = 0;
             codeClosePosition = 0;
@@ -183,7 +187,7 @@ module.exports = class {
 
         }
         if (0 === currentState) code += '`;\n';
-        code += 'return this["@html"];\n';
+        code += 'resolve(_this["@html"]);\n';
         return code;
     }
 

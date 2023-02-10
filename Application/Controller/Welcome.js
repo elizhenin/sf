@@ -1,6 +1,6 @@
 module.exports = class extends Controller_Template {
      async action_index(){
-        let content = new this.ViewJS("default.welcome");
+        let content = this.ViewJS("default.welcome");
         content.foo="my test string"
         content.bar="other test string",
         content.yes='yes))',
