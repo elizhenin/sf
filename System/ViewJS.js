@@ -73,8 +73,6 @@ module.exports = class {
         };\n`;
         functionBody += this._parse()+`\n`;
         functionBody += `})\n}\n`;
-      
-        let AsyncFunction = (async function () {}).constructor;
         let result = '';
         try {
             let func = eval(functionBody);
