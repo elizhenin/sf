@@ -49,10 +49,8 @@ module.exports = class extends Application.System.Model {
                     if (item.logic == 'OR') {
                         records = records.andWhere(function () {
                             let count = 0;
-                            let op = '';
+                            let op = 'orWhere';
                             for (let value_index in item.value) {
-                                if (count == 0) op = 'orWhere';
-                                else op = 'orWhere';
                                 this[op](item.field, item.expression, item.value[value_index])
                                 count = count + 1;
                             }

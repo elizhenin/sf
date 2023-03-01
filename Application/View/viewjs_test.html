@@ -1,20 +1,21 @@
-<html>
+<!DOCTYPE html>
+<html lang="ru">
 <?js await include('title') ?>
 <?js await include('title') ?>
 <body>
     <h1>${title}</h1>
     <table>
+        <thead>
+            <th>ID</th><th>NAME</th>
+        </thead>
         <?js
-        let a = "?> 'hi' <?js  ?>";
-            for(let i in news){
-            ?>
+          for(let i in news){
+        ?>
         <tr>
             <td>${news[i].id}</td>
             <td>${news[i].name}</td>
         </tr>
-        <?js
-        }
-            ?>
+        <?js } ?>
     </table>
 </body>
 

@@ -1,0 +1,6 @@
+projectKey=sukina-framework
+serverUrl=http://sonarqube.d.1ckab.ru
+serverVersion=9.9.0.65466
+dashboardUrl=http://sonarqube.d.1ckab.ru/dashboard?id=sukina-framework
+ceTaskId=AYaczLMI0p1ODE_Awxbu
+ceTaskUrl=http://sonarqube.d.1ckab.ru/api/ce/task?id=AYaczLMI0p1ODE_Awxbu

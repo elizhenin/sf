@@ -1,0 +1,2 @@
+#!/bin/bash
+~/Загрузки/sonar-scanner-4.8.0.2856-linux/bin/sonar-scanner   -Dsonar.projectKey=sukina-framework   -Dsonar.sources=.   -Dsonar.host.url=http://sonarqube.d.1ckab.ru   -Dsonar.login=sqp_ba374d82690a1003d4091de6a3024f163914bed0
