@@ -31,7 +31,7 @@ module.exports = class View {
         let pattern = new RegExp('(' + this.markerBefore + ')(.+?)(' + this.markerAfter + ')', 'g');
         this.markers = this.html.match(pattern);
         try {
-            for (i = 0; i < this.markers.length; i++) {
+            for (let i = 0; i < this.markers.length; i++) {
                 this.markers[i] = this.markers[i].split(this.markerBefore).join('');
                 this.markers[i] = this.markers[i].split(this.markerAfter).join('');
             }
@@ -103,8 +103,8 @@ module.exports = class View {
         }
 
         let AfterMarker = function (html, marker) {
-            var beginPos = html.indexOf(marker);
-            var result = '';
+            let beginPos = html.indexOf(marker);
+            let result = '';
             if (beginPos > -1) {
                 result = html.slice(beginPos + marker.length);
             }
@@ -118,7 +118,7 @@ module.exports = class View {
                 let key = this.markers[markers_index];
                 if (key.indexOf(' ') > -1) {
                     //command found
-                    var command = key.split(' ');
+                    let command = key.split(' ');
                     switch (command[0]) {
                         case "if": {
                             //if condition
@@ -133,11 +133,11 @@ module.exports = class View {
 
                             */
 
-                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'if ' + command[1] + this.markerAfter);
-                            var AfterBlock = AfterMarker(this.html, this.markerBefore + 'if ' + command[1] + this.markerAfter);
-                            var TrueBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endif ' + command[1] + this.markerAfter);
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'if ' + command[1] + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + 'if ' + command[1] + this.markerAfter);
+                            let TrueBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endif ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endif ' + command[1] + this.markerAfter);
-                            var FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
+                            let FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'else ' + command[1] + this.markerAfter);
                             if ("undefined" != typeof this._data[command[1]]) {
                                 if (this._data[command[1]]) { //show block if true
@@ -166,11 +166,11 @@ module.exports = class View {
 
                             */
 
-                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'is ' + command[1] + " " + command[2] + this.markerAfter);
-                            var AfterBlock = AfterMarker(this.html, this.markerBefore + 'is ' + command[1] + " " + command[2] + this.markerAfter);
-                            var TrueBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endis ' + command[1] + this.markerAfter);
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'is ' + command[1] + " " + command[2] + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + 'is ' + command[1] + " " + command[2] + this.markerAfter);
+                            let TrueBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endis ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endis ' + command[1] + this.markerAfter);
-                            var FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'notis ' + command[1] + this.markerAfter);
+                            let FalseBlock = AfterMarker(TrueBlock, this.markerBefore + 'notis ' + command[1] + this.markerAfter);
                             TrueBlock = BeforeMarker(TrueBlock, this.markerBefore + 'notis ' + command[1] + this.markerAfter);
 
                             if ("undefined" != typeof this._data[command[1]]) {
@@ -197,14 +197,14 @@ module.exports = class View {
                             endfor array
 
                             */
-                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'for ' + command[1] + this.markerAfter);
-                            var AfterBlock = AfterMarker(this.html, this.markerBefore + 'for ' + command[1] + this.markerAfter);
-                            var CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endfor ' + command[1] + this.markerAfter);
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'for ' + command[1] + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + 'for ' + command[1] + this.markerAfter);
+                            let CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endfor ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endfor ' + command[1] + this.markerAfter);
 
                             if ("undefined" != typeof this._data[command[1]]) {
 
-                                var block_list = '';
+                                let block_list = '';
                                 for (let key in this._data[command[1]]) {
                                     let View_Block = new View(null, this.req, this.res, this.lang);
                                     View_Block.factory(CycleBlock);
@@ -230,9 +230,9 @@ module.exports = class View {
                             endwith object
 
                             */
-                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'with ' + command[1] + this.markerAfter);
-                            var AfterBlock = AfterMarker(this.html, this.markerBefore + 'with ' + command[1] + this.markerAfter);
-                            var CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'with ' + command[1] + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + 'with ' + command[1] + this.markerAfter);
+                            let CycleBlock = BeforeMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
                             AfterBlock = AfterMarker(AfterBlock, this.markerBefore + 'endwith ' + command[1] + this.markerAfter);
 
                             if ("undefined" != typeof this._data[command[1]]) {
@@ -254,8 +254,8 @@ module.exports = class View {
                             Syntax:
                             include View.form
                             */
-                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
-                            var AfterBlock = AfterMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + 'include ' + command[1] + this.markerAfter);
                             if (!empty(command[1])) {
                                 /* variables syntax:
                                 ?var_name, if "?" found - look for var_name in data and replace
@@ -295,8 +295,8 @@ module.exports = class View {
                             widget Application.Library.SomeFunc
                             ^^ means "await Application.Library.SomeFunc(this.req, this.res, this._data)"
                             */
-                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
-                            var AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + 'widget ' + command[1] + this.markerAfter);
                             if (!empty(command[1])) {
 
                                 let code_path = command[1];
@@ -327,8 +327,8 @@ module.exports = class View {
                             i18n Hello World
 
                             */
-                            var BeforeBlock = BeforeMarker(this.html, this.markerBefore + key + this.markerAfter);
-                            var AfterBlock = AfterMarker(this.html, this.markerBefore + key + this.markerAfter);
+                            let BeforeBlock = BeforeMarker(this.html, this.markerBefore + key + this.markerAfter);
+                            let AfterBlock = AfterMarker(this.html, this.markerBefore + key + this.markerAfter);
 
                             let lang_key = key.slice(4, key.length).trim();
                             if (!empty(this.lang)) {

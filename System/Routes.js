@@ -133,7 +133,6 @@ let RequestHandler = class {
             }
             if (result) {
                 let res = this.res;
-                let req = this.req;
                 let fileExt = filepath
                     .split('.')
                     .reverse()[0]
@@ -194,8 +193,7 @@ let RequestHandler = class {
         let domains = Object.keys(Application.routes);
         let domainsRoutes = null;
         let clientHost = this.HOST;
-        for (let domains_index = 0; domains_index < domains.length; domains_index++) {
-            let domain = domains[domains_index];
+        for (let domain of domains) {
             if (!empty(clientHost.match(domain))) {
                 domainsRoutes = Application.routes[domain];
                 break;
@@ -219,8 +217,7 @@ let RequestHandler = class {
                 //detect route match
                 switch (type_of_route) {
                     case "object": {
-                        for (let routes_index = 0; routes_index < domainsRoutes.length; routes_index++) {
-                            let route = domainsRoutes[routes_index];
+                        for (let route of domainsRoutes) {
                             let match = Application.lib['path-to-regexp'].match(route.uri, {
                                 encode: encodeURI,
                                 decode: decodeURIComponent
@@ -401,8 +398,7 @@ let RequestHandler = class {
                     acceptEncoding[i] = acceptEncoding[i].trim().toLowerCase().split(';')[0];
                 }
             }
-            if (acceptEncoding.indexOf('deflate')) return true;
-            else return false;
+            return (acceptEncoding.indexOf('deflate')? true:false)
         },
         deflate(payload) {
             return new Promise(function (resolve, reject) {
@@ -418,7 +414,6 @@ let RequestHandler = class {
 
     async send(result = undefined) {
         if (empty(result)) result = this.result;
-        let req = this.req;
         let res = this.res;
         if (typeof result != 'string') {
             if (Buffer.isBuffer(result)) {
@@ -445,8 +440,8 @@ let multipartFormParser = class {
     constructor(header) {
         let items = header.split(';');
         if (items)
-            for (let i = 0; i < items.length; i++) {
-                let item = (new String(items[i])).trim();
+            for (let _item of items) {
+                let item = _item.trim();
                 if (item.startsWith('boundary=')) {
                     let k = item.split('=');
                     this.boundary = (new String(k[1])).trim();

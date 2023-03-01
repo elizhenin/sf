@@ -1,7 +1,6 @@
 let SF_servercall = async function (method, arg) {
     let _arg = [];
-    for (let i = 0; i < arg.length; i++)
-        _arg.push(arg[i]);
+    for (let a of arg) _arg.push(a);
     _arg = JSON.stringify(_arg);
     _arg = method + "|" + _arg;
     _arg = CryptoJS.AES.encrypt(_arg, '{{apiToken}}').toString();

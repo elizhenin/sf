@@ -84,9 +84,6 @@ module.exports = class AppLoader {
                     doNext(rootNode[item], Application.lib.path.join(Directory, item), doNext);
                 }
             }
-
-            return;
-
         };
 
         PopularizeCollections(root, CurrentDirectory, PopularizeCollections)
