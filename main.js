@@ -37,7 +37,7 @@
     //load config from ini
     Application._ConfigLoader = function (branch, filename) {
         let iniParser = require(Application.lib.path.join(Application.config.Directories.System, 'IniParser.js'));
-        var config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
+        let config_text = Application.lib.fs.readFileSync(Application.lib.path.join(Application._dirname, filename)).toString();
         branch = Object.assign(branch, new iniParser(config_text));
         config_text = undefined;
     }

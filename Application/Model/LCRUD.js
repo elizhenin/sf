@@ -25,19 +25,14 @@ module.exports = class extends Application.System.Model {
         return $db;
     }
 
-    async Create(item_object) {
-        let $db = await this.DB().insert(item_object).into(this._selected_table);
-        return $db;
-    }
-
     async Read(item_id) {
-        let records = await this.DB().select('').from(this._selected_table).where('id', '=', item_id).limit(1);
+        let records = await this.DB().select().from(this._selected_table).where('id', '=', item_id).limit(1);
         if (records.length) return records[0];
         else return false;
     }
 
     async List(filter) {
-        let records = this.DB().select('').from(this._selected_table);
+        let records = this.DB().select().from(this._selected_table);
         if (filter && typeof filter == typeof []) {
             for (let i in filter) {
                 let item = filter[i]

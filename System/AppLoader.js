@@ -67,6 +67,18 @@ module.exports = class AppLoader {
                             if (classname) global[classname] = rootNode[ObjName]
                             break
                         }
+                        case "yml":{
+                            let ObjName = item.slice(0, -4); //remove ".yml" symbols from end
+                            //add this ini object to namespace
+                            let YAML = Application.lib.yaml;
+                            rootNode[ObjName] = YAML.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
+                            //global classname
+                            let filename = Application.lib.path.join(Directory, item)
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split('/').join('_')
+                            if (2 > classname.split('_').length) classname = false
+                            if (classname) global[classname] = rootNode[ObjName]
+                            break
+                        }
                         case "html": {
                             let ObjName = item.slice(0, -5); //remove ".html" symbols from end
                             //add this html to namespace
