@@ -3,3 +3,5 @@ access.log
 error.log
 package-lock.json
 .idea
+sonar
+.scannernetwork/
