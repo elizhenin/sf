@@ -301,7 +301,7 @@ let RequestHandler = class {
 
             //2
             try {
-                if (!this.Error) await _Controller['action_' + _Controller._action]();
+                if (!this.Error) await _Controller['action_' + _Controller._action](...Object.values(this.req.params));
             } catch (e) {
                 //found error on controller.action stage
                 this.Error = "Application.Controller." + Controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
