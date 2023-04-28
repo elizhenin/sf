@@ -69,7 +69,7 @@ module.exports = class AppLoader {
                         }
                         case "yml":{
                             let ObjName = item.slice(0, -4); //remove ".yml" symbols from end
-                            //add this ini object to namespace
+                            //add this yml object to namespace
                             let YAML = Application.lib.yaml;
                             rootNode[ObjName] = YAML.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
                             //global classname
@@ -78,6 +78,21 @@ module.exports = class AppLoader {
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break
+                        }
+                        case "xml":{
+                            let ObjName = item.slice(0, -4); //remove ".xml" symbols from end
+                            //add this xml object to namespace
+                            let xml2js = Application.lib.xml2js;
+                            const xml = Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8');
+                            xml2js.parseString(xml, { mergeAttrs: true },(err, result)=>{
+                                rootNode[ObjName] = result;
+                            })
+                            //global classname
+                            let filename = Application.lib.path.join(Directory, item)
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split('/').join('_')
+                            if (2 > classname.split('_').length) classname = false
+                            if (classname) global[classname] = rootNode[ObjName]
+                            break;
                         }
                         case "html": {
                             let ObjName = item.slice(0, -5); //remove ".html" symbols from end
