@@ -85,6 +85,37 @@ module.exports = class AppLoader {
                             let xml2js = Application.lib.xml2js;
                             const xml = Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8');
                             xml2js.parseString(xml, { mergeAttrs: true },(err, result)=>{
+                                function reduceArrays(root){
+                                    let keys = [];
+                                    (typeof root == 'string').ifFalse(()=>{
+                                        (root instanceof Array).ifTrue(()=>{
+                                            keys = (0).to(root.length-1);
+                                        }).ifFalse(()=>{
+                                            keys = Object.keys(root);
+                                        });
+                                        keys.do(k=>{
+                                            if(root[k] instanceof Array){
+                                                switch(root[k].length){
+                                                    case 0:{
+                                                        root[k] = null;
+                                                        break;
+                                                    }
+                                                    case 1:{
+                                                        root[k] = root[k][0];
+                                                    }
+                                                    default:{
+                                                        reduceArrays(root[k])
+                                                    }
+                                                }
+                                            }else{
+                                                reduceArrays(root[k])
+                                            }
+                                            
+                                        });
+                                    });
+
+                                };
+                                reduceArrays(result);
                                 rootNode[ObjName] = result;
                             })
                             //global classname
