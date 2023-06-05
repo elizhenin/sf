@@ -4,7 +4,7 @@ module.exports = function sysTools() {
     Array.prototype.atRandom = function () {return this[Math.floor(Math.random() * this.length)]};
     Object.defineProperty(Array.prototype, "atRandom", {enumerable: false });
     
-    Array.prototype.do = function (aBlock) {const l = this.length;if(l) for(let i = 0;i< l;i++) aBlock(this[i]);return this};
+    Array.prototype.do = function (aBlock) {const l = this.length;if(l) for(let i = 0;i< l;i++) aBlock(this[i],i);return this};
     Object.defineProperty(Array.prototype, "do", { enumerable: false });
 
     Number.prototype.to = function (num) { let r = [];for (let i = this.valueOf(); i <= num; i++) {r.push(i)};return r};
