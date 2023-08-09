@@ -1,27 +1,4 @@
 module.exports = function sysTools() {
-    /* Extensions to basic types */
-    
-    Array.prototype.atRandom = function () {return this[Math.floor(Math.random() * this.length)]};
-    Object.defineProperty(Array.prototype, "atRandom", {enumerable: false });
-    
-    Array.prototype.do = function (aBlock) {const l = this.length;if(l) for(let i = 0;i< l;i++) aBlock(this[i],i);return this};
-    Object.defineProperty(Array.prototype, "do", { enumerable: false });
-
-    Number.prototype.to = function (num) { let r = [];for (let i = this.valueOf(); i <= num; i++) {r.push(i)};return r};
-    Object.defineProperty(Number.prototype, "to", { enumerable: false });
-    
-    Boolean.prototype.ifTrue = function (aBlock) {if (this == true){aBlock()}; return this};
-    Object.defineProperty(Boolean.prototype, "ifTrue", { enumerable: false });
-    
-    Boolean.prototype.ifFalse = function (aBlock) {if (this == false){aBlock()}; return this};
-    Object.defineProperty(Boolean.prototype, "ifFalse", { enumerable: false });
-    
-    Function.prototype.whileTrue = function (aBlock) {while (this() == true){aBlock()}; return this};
-    Object.defineProperty(Function.prototype, "whileTrue", { enumerable: false });
-
-    Function.prototype.whileFalse = function (aBlock) {while (this() == false){aBlock()}; return this};
-    Object.defineProperty(Function.prototype, "whileFalse", { enumerable: false });
-  
     /* Addons */
     let Context = false;
     if (typeof global != "undefined") Context = global;
@@ -704,6 +681,7 @@ module.exports = function sysTools() {
             let guid, yChar, xChar, timestamp;
             yChar = ['8', '9', 'a', 'b'];
             xChar = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
+            const atRandom = function (arr) {return arr[Math.floor(Math.random() * arr.length)]}
             // in timestamp and guid arrays ignore the 0 index and work from 1
             // ommit the 0 index item at the end
             timestamp = ' 0' + Context.Now().toString(16);
@@ -719,21 +697,21 @@ module.exports = function sysTools() {
             guid[19] = '-';
             guid[24] = '-';
             // replace Y with allowed digit
-            guid[20] = yChar.atRandom();
+            guid[20] = atRandom(yChar);
             // replace X positions with randoms
-            (16).to(18).do(i => {
-                guid[i] = xChar.atRandom()
-            });
+            for(let i=16;i<=18;i++){
+                guid[i] = atRandom(xChar)
+            };
 
-            (21).to(23).do(i => {
-                guid[i] = xChar.atRandom()
-            });
-            (25).to(36).do(i => {
-                guid[i] = xChar.atRandom()
-            });
+            for(let i=21;i<=23;i++){
+                guid[i] = atRandom(xChar)
+            };
+            for(let i=25;i<=36;i++){
+                guid[i] = atRandom(xChar)
+            };
             // replace H positions with timestamp hex digits
-            (1).to(8).do(i => {guid[i] = timestamp[i]});
-            (10).to(13).do(i => {guid[i] = timestamp[i - 1]});
+            for(let i=1;i<=8;i++){guid[i] = timestamp[i]};
+            for(let i=10;i<=13;i++){guid[i] = timestamp[i - 1]};
             guid.shift();guid = guid.join('');
             return guid
         }

@@ -55,7 +55,7 @@ module.exports = class AppLoader {
                             if (classname) global[classname] = rootNode[ObjName]
                             break
                         }
-                        case "ini":{
+                        case "ini": {
                             let ObjName = item.slice(0, -4); //remove ".ini" symbols from end
                             //add this ini object to namespace
                             let iniParser = require(Application.lib.path.join(Application.config.Directories.System, 'IniParser.js'));
@@ -67,7 +67,7 @@ module.exports = class AppLoader {
                             if (classname) global[classname] = rootNode[ObjName]
                             break
                         }
-                        case "yml":{
+                        case "yml": {
                             let ObjName = item.slice(0, -4); //remove ".yml" symbols from end
                             //add this yml object to namespace
                             let YAML = Application.lib.yaml;
@@ -79,40 +79,42 @@ module.exports = class AppLoader {
                             if (classname) global[classname] = rootNode[ObjName]
                             break
                         }
-                        case "xml":{
+                        case "xml": {
                             let ObjName = item.slice(0, -4); //remove ".xml" symbols from end
                             //add this xml object to namespace
                             let xml2js = Application.lib.xml2js;
                             const xml = Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8');
-                            xml2js.parseString(xml, { mergeAttrs: true },(err, result)=>{
-                                function reduceArrays(root){
+                            xml2js.parseString(xml, {
+                                mergeAttrs: true
+                            }, (err, result) => {
+                                function reduceArrays(root) {
                                     let keys = [];
-                                    (typeof root == 'string').ifFalse(()=>{
-                                        (root instanceof Array).ifTrue(()=>{
-                                            keys = (0).to(root.length-1);
-                                        }).ifFalse(()=>{
+                                    if(typeof root == 'string'){}else{
+                                        if(root instanceof Array){
+                                            for(let i=0;i<=root.length - 1;i++){keys.push(i)};
+                                        }else{
                                             keys = Object.keys(root);
-                                        });
-                                        keys.do(k=>{
-                                            if(root[k] instanceof Array){
-                                                switch(root[k].length){
-                                                    case 0:{
+                                        };
+                                        keys.forEach(k => {
+                                            if (root[k] instanceof Array) {
+                                                switch (root[k].length) {
+                                                    case 0: {
                                                         root[k] = null;
                                                         break;
                                                     }
-                                                    case 1:{
+                                                    case 1: {
                                                         root[k] = root[k][0];
                                                     }
-                                                    default:{
+                                                    default: {
                                                         reduceArrays(root[k])
                                                     }
                                                 }
-                                            }else{
+                                            } else {
                                                 reduceArrays(root[k])
                                             }
-                                            
+
                                         });
-                                    });
+                                    };
 
                                 };
                                 reduceArrays(result);
@@ -124,6 +126,32 @@ module.exports = class AppLoader {
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break;
+                        }
+                        case "csv": {
+                            let ObjName = item.slice(0, -4); //remove ".csv" symbols from end
+                            //read csv table as array of row objects and add to namespace
+                            let csvtojson = Application.lib.csvtojson;
+                            csvtojson().fromFile(Application.lib.path.join(Directory, item))
+                                .then((jsonObj) => {
+                                    //attempt to determine bools and numbers
+                                    for(let row of jsonObj){
+                                        const keys = Object.keys(row);
+                                        for(const k of keys){
+                                            if(row[k].toLowerCase() === 'true') row[k] = true;
+                                            if(row[k].toLowerCase() === 'false') row[k] = false;
+                                            if(row[k].toLowerCase() === 'null') row[k] = null;
+                                            if(row[k].toLowerCase() === 'nan') row[k] = NaN;
+                                            if(row[k].toLowerCase() === 'undefined') row[k] = undefined;
+                                            if(row[k] == parseFloat(row[k])) row[k] = parseFloat(row[k]);
+                                        }
+                                    }
+                                    rootNode[ObjName] = jsonObj;
+                                    //global classname
+                                    let filename = Application.lib.path.join(Directory, item);
+                                    let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split('/').join('_');
+                                    if (2 > classname.split('_').length) classname = false;
+                                    if (classname) global[classname] = rootNode[ObjName]
+                                })
                         }
                         case "html": {
                             let ObjName = item.slice(0, -5); //remove ".html" symbols from end
