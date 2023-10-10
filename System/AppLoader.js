@@ -19,7 +19,7 @@ module.exports = class AppLoader {
                             //add this js to namespace
                             let _init = function (firstTry = false) {
                                 let filename = Application.lib.path.join(Directory, item);
-                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -3).split('/').join('_');
+                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -3).split((process.platform === 'win32') ? '\\' : '/').join('_');
                                 if (2 > classname.split('_').length) classname = false;
                                 try {
                                     rootNode[ObjName] = require(filename);
