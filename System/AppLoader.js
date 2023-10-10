@@ -50,7 +50,7 @@ module.exports = class AppLoader {
                             rootNode[ObjName] = JSON.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
                             //global classname
                             let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -5).split('/').join('_')
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -5).split((process.platform === 'win32') ? '\\' : '/').join('_')
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break
@@ -62,7 +62,7 @@ module.exports = class AppLoader {
                             rootNode[ObjName] = new iniParser(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
                             //global classname
                             let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split('/').join('_')
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split((process.platform === 'win32') ? '\\' : '/').join('_')
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break
@@ -74,7 +74,7 @@ module.exports = class AppLoader {
                             rootNode[ObjName] = YAML.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
                             //global classname
                             let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split('/').join('_')
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split((process.platform === 'win32') ? '\\' : '/').join('_')
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break
