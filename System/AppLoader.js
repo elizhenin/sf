@@ -19,7 +19,7 @@ module.exports = class AppLoader {
                             //add this js to namespace
                             let _init = function (firstTry = false) {
                                 let filename = Application.lib.path.join(Directory, item);
-                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -3).split((process.platform === 'win32') ? '\\' : '/').join('_');
+                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -3).split(Application.lib.path.sep).join('_');
                                 if (2 > classname.split('_').length) classname = false;
                                 try {
                                     rootNode[ObjName] = require(filename);
@@ -50,7 +50,7 @@ module.exports = class AppLoader {
                             rootNode[ObjName] = JSON.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
                             //global classname
                             let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -5).split((process.platform === 'win32') ? '\\' : '/').join('_')
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -5).split(Application.lib.path.sep).join('_')
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break
@@ -62,7 +62,7 @@ module.exports = class AppLoader {
                             rootNode[ObjName] = new iniParser(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
                             //global classname
                             let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split((process.platform === 'win32') ? '\\' : '/').join('_')
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split(Application.lib.path.sep).join('_')
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break
@@ -74,7 +74,7 @@ module.exports = class AppLoader {
                             rootNode[ObjName] = YAML.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
                             //global classname
                             let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split((process.platform === 'win32') ? '\\' : '/').join('_')
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split(Application.lib.path.sep).join('_')
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break
@@ -89,10 +89,10 @@ module.exports = class AppLoader {
                             }, (err, result) => {
                                 function reduceArrays(root) {
                                     let keys = [];
-                                    if(typeof root == 'string'){}else{
-                                        if(root instanceof Array){
-                                            for(let i=0;i<=root.length - 1;i++){keys.push(i)};
-                                        }else{
+                                    if (typeof root == 'string') { } else {
+                                        if (root instanceof Array) {
+                                            for (let i = 0; i <= root.length - 1; i++) { keys.push(i) };
+                                        } else {
                                             keys = Object.keys(root);
                                         };
                                         keys.forEach(k => {
@@ -122,7 +122,7 @@ module.exports = class AppLoader {
                             })
                             //global classname
                             let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split((process.platform === 'win32') ? '\\' : '/').join('_')
+                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split(Application.lib.path.sep).join('_')
                             if (2 > classname.split('_').length) classname = false
                             if (classname) global[classname] = rootNode[ObjName]
                             break;
@@ -134,21 +134,21 @@ module.exports = class AppLoader {
                             csvtojson().fromFile(Application.lib.path.join(Directory, item))
                                 .then((jsonObj) => {
                                     //attempt to determine bools and numbers
-                                    for(let row of jsonObj){
+                                    for (let row of jsonObj) {
                                         const keys = Object.keys(row);
-                                        for(const k of keys){
-                                            if(row[k].toLowerCase() === 'true') row[k] = true;
-                                            if(row[k].toLowerCase() === 'false') row[k] = false;
-                                            if(row[k].toLowerCase() === 'null') row[k] = null;
-                                            if(row[k].toLowerCase() === 'nan') row[k] = NaN;
-                                            if(row[k].toLowerCase() === 'undefined') row[k] = undefined;
-                                            if(row[k] == parseFloat(row[k])) row[k] = parseFloat(row[k]);
+                                        for (const k of keys) {
+                                            if (row[k].toLowerCase() === 'true') row[k] = true;
+                                            if (row[k].toLowerCase() === 'false') row[k] = false;
+                                            if (row[k].toLowerCase() === 'null') row[k] = null;
+                                            if (row[k].toLowerCase() === 'nan') row[k] = NaN;
+                                            if (row[k].toLowerCase() === 'undefined') row[k] = undefined;
+                                            if (row[k] == parseFloat(row[k])) row[k] = parseFloat(row[k]);
                                         }
                                     }
                                     rootNode[ObjName] = jsonObj;
                                     //global classname
                                     let filename = Application.lib.path.join(Directory, item);
-                                    let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split((process.platform === 'win32') ? '\\' : '/').join('_');
+                                    let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split(Application.lib.path.sep).join('_');
                                     if (2 > classname.split('_').length) classname = false;
                                     if (classname) global[classname] = rootNode[ObjName]
                                 })
