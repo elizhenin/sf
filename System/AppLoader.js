@@ -5,9 +5,9 @@ module.exports = class AppLoader {
         let CurrentDirectory = Application.config.Directories.App;
         let ClassLoadingOrder = [];
         Application._ClassLoadingOrder = ClassLoadingOrder;
+        const ClassesWaitingRetry = {};
         let PopularizeCollections = function (rootNode, Directory, doNext) {
-            let SubcollectionList = [];
-            let ClassesWaitingRetry = {};
+            const SubcollectionList = [];
             //get items from this dir and do the work
             let dir_list = Application.lib.fs.readdirSync(Directory)
             for (let i in dir_list) {
