@@ -29,6 +29,7 @@
     Application.config.Directories.Root = "";
     Application.config.Directories.System = "System";
     Application.config.Directories.App = "Application";
+    Application.config.Directories.Test = "Test";
     Application.config.Directories.AppPublic = "Public";
     for (key in Application.config.Directories) {
         Application.config.Directories[key] = Application.lib.path.join(Application._dirname, Application.config.Directories[key]);
@@ -75,10 +76,16 @@
 
         //call AppLoader to load other MVC code
         Application._appReady = true;
-        new Application.System.AppLoader(Application);
+        new Application.System.AppLoader();
 
         let _continueInit = function () {
             if (Application._appReady) {
+                //save class init order
+                let ClassLoadingOrderRebuild = Application.config.Server.ClassLoadingOrderRebuild ?? 'true';
+                if(ClassLoadingOrderRebuild == 'true') {
+                    const filename = 'classLoadingOrder.json';
+                    Application.lib.fs.writeFileSync(Application.lib.path.join(Application._dirname, filename),JSON.stringify(Application._ClassLoadingOrder,' ',2));
+                }
                 //set up databases
                 Application.DB = {};
                 for (let key in Application.database) {
@@ -89,6 +96,10 @@
                 Application.HTTP = new Application.System.Routes();
                 Application.Scheduler = new Application.System.Scheduler();
 
+                if(process.env.SF_RUN_TEST && process.env.SF_RUN_TEST=='true'){
+                    global.Test = {};
+                    new Application.System.TestLoader();
+                };
             } else setTimeout(_continueInit, 100);
         }
         _continueInit();

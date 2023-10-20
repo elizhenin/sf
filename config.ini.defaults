@@ -8,6 +8,7 @@ Port = 5000
 MaxListeners=100
 AccessLog=access.log
 ErrorLog=error.log
+ClassLoadingOrderRebuild=true
 [CPU]
 Workers = 1
 [MailSettings]

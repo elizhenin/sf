@@ -1,9 +1,13 @@
 // export ClassLoader
 module.exports = class AppLoader {
-    constructor(root) {
+    constructor() {
+        let ClassLoadingOrderRebuild = Application.config.Server.ClassLoadingOrderRebuild ?? 'true';
         let CurrentDirectory = Application.config.Directories.App;
+        let ClassLoadingOrder = [];
+        Application._ClassLoadingOrder = ClassLoadingOrder;
         let PopularizeCollections = function (rootNode, Directory, doNext) {
             let SubcollectionList = [];
+            let ClassesWaitingRetry = {};
             //get items from this dir and do the work
             let dir_list = Application.lib.fs.readdirSync(Directory)
             for (let i in dir_list) {
@@ -15,6 +19,7 @@ module.exports = class AppLoader {
                 } else {
                     switch (item.split('.').reverse()[0].toLowerCase()) {
                         case "js": {
+                            if (ClassLoadingOrderRebuild == 'false') break;
                             let ObjName = item.slice(0, -3); //remove ".js" symbols from end
                             //add this js to namespace
                             let _init = function (firstTry = false) {
@@ -25,11 +30,16 @@ module.exports = class AppLoader {
                                     rootNode[ObjName] = require(filename);
                                     if (classname) global[classname] = rootNode[ObjName];
                                     if (!firstTry) {
-                                        Application._appReady = true;
+                                        delete ClassesWaitingRetry[filename];
+                                        if (empty(Object.keys(ClassesWaitingRetry))) {
+                                            Application._appReady = true;
+                                        }
                                         console.log(filename + ' now ready')
-                                    }
+                                    };
+                                    ClassLoadingOrder.push(filename.slice(Application.config.Directories.App.length + 1));
                                 } catch (e) {
                                     Application._appReady = false;
+                                    ClassesWaitingRetry[filename] = true;
                                     if (
                                         "TypeError: Class extends value undefined is not a constructor or null" === e.toString()
                                     ) {
@@ -172,6 +182,23 @@ module.exports = class AppLoader {
             }
         };
 
-        PopularizeCollections(root, CurrentDirectory, PopularizeCollections)
+        if (ClassLoadingOrderRebuild == 'false') Application._appReady = false;
+
+        PopularizeCollections(Application, CurrentDirectory, PopularizeCollections);
+
+        if (ClassLoadingOrderRebuild == 'false') {
+            const classList = require(Application.lib.path.join(Application._dirname, 'classLoadingOrder.json'));
+            for (const filename of classList) {
+                let classpath = filename.slice(0, -3).split(Application.lib.path.sep);
+                const entityName = classpath.pop();
+                const shortcut = [...classpath, entityName].join('_');
+                classpath = classpath.join('.');
+                let targetObject = empty(classpath) ? Application : ObjSelector(Application, classpath);
+                targetObject[entityName] = require(Application.lib.path.join(Application.config.Directories.App, filename));
+                if (2 > shortcut.split('_').length) { } else { global[shortcut] = targetObject[entityName]; }
+            }
+            Application._appReady = true;
+        }
+
     }
 }
