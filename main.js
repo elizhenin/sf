@@ -43,6 +43,22 @@
         config_text = undefined;
     }
     Application._ConfigLoader(Application.config, 'config.ini');
+    //overlay config from commangline
+    for (const arg of process.argv) {
+        // syntax of cmd params:  --sf:<section>.<option>=<Value> 
+        if (arg.length > 5) {
+            if (arg.startsWith('--sf:')) {
+                let overlay = arg.slice(5);
+                overlay = overlay.split('=');
+                let path = overlay[0].split('.');
+                let key = path.pop();
+                path = path.join('.');
+                let value = overlay[1];
+                let section = ObjSelector(Application.config, path);
+                section[key] = value;
+            }
+        }
+    };
     //set up clustering
     if (Application.lib.cluster.isMaster) { // master process
 
@@ -82,9 +98,9 @@
             if (Application._appReady) {
                 //save class init order
                 let ClassLoadingOrderRebuild = Application.config.Server.ClassLoadingOrderRebuild ?? 'true';
-                if(ClassLoadingOrderRebuild == 'true') {
+                if (ClassLoadingOrderRebuild == 'true') {
                     const filename = 'classLoadingOrder.json';
-                    Application.lib.fs.writeFileSync(Application.lib.path.join(Application._dirname, filename),JSON.stringify(Application._ClassLoadingOrder,' ',2));
+                    Application.lib.fs.writeFileSync(Application.lib.path.join(Application._dirname, filename), JSON.stringify(Application._ClassLoadingOrder, ' ', 2));
                 }
                 //set up databases
                 Application.DB = {};
@@ -96,10 +112,11 @@
                 Application.HTTP = new Application.System.Routes();
                 Application.Scheduler = new Application.System.Scheduler();
 
-                if(process.env.SF_RUN_TEST && process.env.SF_RUN_TEST=='true'){
+                if (Application.config.Server.RunTests == 'true') {
                     global.Test = {};
                     new Application.System.TestLoader();
                 };
+
             } else setTimeout(_continueInit, 100);
         }
         _continueInit();

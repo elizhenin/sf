@@ -60,6 +60,18 @@ module.exports = function sysTools() {
             }
             return isEmpty;
         };
+        Context.use = function(obj){
+            /* 
+             example. At the top of your component:
+             const myFooLibrary = use(Application.Library.Foo);
+
+             if Application.Library.Foo doesn't loaded yet, use() forces error, and this component will be loaded later
+            */
+            if(typeof obj === 'undefined'){
+                class invokeUseError extends undefined {}
+            }
+            return obj;
+        }
         Context.htmlspecialchars = function (string) {
             let result = string;
             if (!empty(string))

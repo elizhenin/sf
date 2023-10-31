@@ -5,9 +5,9 @@ module.exports = class AppLoader {
         let CurrentDirectory = Application.config.Directories.App;
         let ClassLoadingOrder = [];
         Application._ClassLoadingOrder = ClassLoadingOrder;
+        const ClassesWaitingRetry = {};
         let PopularizeCollections = function (rootNode, Directory, doNext) {
-            let SubcollectionList = [];
-            let ClassesWaitingRetry = {};
+            const SubcollectionList = [];
             //get items from this dir and do the work
             let dir_list = Application.lib.fs.readdirSync(Directory)
             for (let i in dir_list) {
@@ -140,28 +140,27 @@ module.exports = class AppLoader {
                         case "csv": {
                             let ObjName = item.slice(0, -4); //remove ".csv" symbols from end
                             //read csv table as array of row objects and add to namespace
-                            let csvtojson = Application.lib.csvtojson;
-                            csvtojson().fromFile(Application.lib.path.join(Directory, item))
-                                .then((jsonObj) => {
-                                    //attempt to determine bools and numbers
-                                    for (let row of jsonObj) {
-                                        const keys = Object.keys(row);
-                                        for (const k of keys) {
-                                            if (row[k].toLowerCase() === 'true') row[k] = true;
-                                            if (row[k].toLowerCase() === 'false') row[k] = false;
-                                            if (row[k].toLowerCase() === 'null') row[k] = null;
-                                            if (row[k].toLowerCase() === 'nan') row[k] = NaN;
-                                            if (row[k].toLowerCase() === 'undefined') row[k] = undefined;
-                                            if (row[k] == parseFloat(row[k])) row[k] = parseFloat(row[k]);
-                                        }
-                                    }
-                                    rootNode[ObjName] = jsonObj;
-                                    //global classname
-                                    let filename = Application.lib.path.join(Directory, item);
-                                    let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split(Application.lib.path.sep).join('_');
-                                    if (2 > classname.split('_').length) classname = false;
-                                    if (classname) global[classname] = rootNode[ObjName]
-                                })
+                            let loadCsv = Application.lib['csv-load-sync'].load;
+                            const jsonObj = loadCsv(Application.lib.path.join(Directory, item))
+                            //attempt to determine bools and numbers
+                            for (let row of jsonObj) {
+                                const keys = Object.keys(row);
+                                for (const k of keys) {
+                                    if (row[k].toLowerCase() === 'true') row[k] = true;
+                                    if (row[k].toLowerCase() === 'false') row[k] = false;
+                                    if (row[k].toLowerCase() === 'null') row[k] = null;
+                                    if (row[k].toLowerCase() === 'nan') row[k] = NaN;
+                                    if (row[k].toLowerCase() === 'undefined') row[k] = undefined;
+                                    if (row[k] == parseFloat(row[k])) row[k] = parseFloat(row[k]);
+                                }
+                                rootNode[ObjName] = jsonObj;
+                                //global classname
+                                let filename = Application.lib.path.join(Directory, item);
+                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -4).split(Application.lib.path.sep).join('_');
+                                if (2 > classname.split('_').length) classname = false;
+                                if (classname) global[classname] = rootNode[ObjName]
+                            }
+                            break
                         }
                         case "html": {
                             let ObjName = item.slice(0, -5); //remove ".html" symbols from end

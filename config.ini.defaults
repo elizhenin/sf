@@ -9,6 +9,7 @@ MaxListeners=100
 AccessLog=access.log
 ErrorLog=error.log
 ClassLoadingOrderRebuild=true
+RunTests=false
 [CPU]
 Workers = 1
 [MailSettings]
