@@ -44,7 +44,7 @@ const asyncXMLparse = (xml) => {
 }
 
 
-module.exports = class XmlParser {
+module.exports = class XmlParser extends BaseObject {
 
     async parse(string) {
         return await asyncXMLparse(string)

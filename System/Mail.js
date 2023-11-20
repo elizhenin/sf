@@ -1,6 +1,7 @@
 //basic Sukina Framework mail class
-module.exports = class Mail {
+module.exports = class Mail extends BaseObject {
     constructor(m_config = 'default') {
+        super();
         this.config = Application.mailer[m_config];
         this.transporter = Application.lib.nodemailer.createTransport(
             this.config

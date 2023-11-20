@@ -4,6 +4,11 @@ module.exports = function sysTools() {
     if (typeof global != "undefined") Context = global;
     if (typeof window != "undefined") Context = window;
     if (Context) {
+        Context.BaseObject = class BaseObject {
+            className() {
+                return empty(this.constructor.name) ? null : this.constructor.name;
+            }
+        }
         Context.Now = function () {
             if (empty(arguments)) return new Date().getTime()
             else {
@@ -60,28 +65,28 @@ module.exports = function sysTools() {
             }
             return isEmpty;
         };
-        Context.use = function(obj){
+        Context.use = function (obj) {
             /* 
              example. At the top of your component:
              const myFooLibrary = use(Application.Library.Foo);
 
              if Application.Library.Foo doesn't loaded yet, use() forces error, and this component will be loaded later
             */
-            if(typeof obj === 'undefined'){
-                class invokeUseError extends undefined {}
+            if (typeof obj === 'undefined') {
+                class invokeUseError extends undefined { }
             }
             return obj;
         }
         Context.htmlspecialchars = function (string) {
             let result = string;
             if (!empty(string))
-            result = string.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('\'').join('&apos;').split('"').join('&quot;');
+                result = string.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('\'').join('&apos;').split('"').join('&quot;');
             return result
         };
         Context.htmlspecialchars_decode = function (string) {
             let result = string;
             if (!empty(string))
-            result = string.split('&amp;').join('&').split('&lt;').join('<').split('&gt;').join('>').split('&apos;').join('\'').split('&quot;').join('"');
+                result = string.split('&amp;').join('&').split('&lt;').join('<').split('&gt;').join('>').split('&apos;').join('\'').split('&quot;').join('"');
             return result
         };
 
@@ -89,7 +94,7 @@ module.exports = function sysTools() {
             let regex = /(<([^>]+)>)/ig;
             let result = string;
             if (!empty(string))
-            result = string.replace(regex, "");
+                result = string.replace(regex, "");
             return result
         };
 
@@ -493,7 +498,7 @@ module.exports = function sysTools() {
             let kt = function (t) {
                 return (t < 20) ? 0x5A827999 :
                     (t < 40) ? 0x6ED9EBA1 :
-                    (t < 60) ? 0x8F1BBCDC : 0xCA62C1D6;
+                        (t < 60) ? 0x8F1BBCDC : 0xCA62C1D6;
             }
             // Modulo 2 to the 32nd power addition, because JavaScript's number is a
             // double-precision floating-point number, so the 32-bit number is split
@@ -517,18 +522,18 @@ module.exports = function sysTools() {
         Context.sha256 = function (s) {
             let asciiArray = toUTF8Array(s);
             function rightRotate(value, amount) {
-                return (value>>>amount) | (value<<(32 - amount));
+                return (value >>> amount) | (value << (32 - amount));
             };
-            
+
             const mathPow = Math.pow;
             const maxWord = mathPow(2, 32);
             const lengthProperty = 'length'
             let i, j; // Used as a counter across the whole file
             let result = ''
-        
+
             const words = [];
-            const asciiBitLength = asciiArray[lengthProperty]*8;
-            
+            const asciiBitLength = asciiArray[lengthProperty] * 8;
+
             //* caching results is optional - remove/add slash from front of this line to toggle
             // Initial hash value: first 32 bits of the fractional parts of the square roots of the first 8 primes
             // (we actually calculate the first 64, but extra values are just ignored)
@@ -540,28 +545,28 @@ module.exports = function sysTools() {
             var hash = [], k = [];
             var primeCounter = 0;
             //*/
-        
+
             const isComposite = {};
             for (let c = 2; primeCounter < 64; c++) {
                 if (!isComposite[c]) {
                     for (i = 0; i < 313; i += c) {
                         isComposite[i] = c;
                     }
-                    hash[primeCounter] = (mathPow(c, .5)*maxWord)|0;
-                    k[primeCounter++] = (mathPow(c, 1/3)*maxWord)|0;
+                    hash[primeCounter] = (mathPow(c, .5) * maxWord) | 0;
+                    k[primeCounter++] = (mathPow(c, 1 / 3) * maxWord) | 0;
                 }
             }
-            
+
             asciiArray.push(0x80) // Append Ƈ' bit (plus zero padding)
-            while (asciiArray[lengthProperty]%64 - 56) asciiArray.push(0x00) // More zero padding
+            while (asciiArray[lengthProperty] % 64 - 56) asciiArray.push(0x00) // More zero padding
             for (i = 0; i < asciiArray[lengthProperty]; i++) {
                 j = asciiArray[i];
-                if (j>>8) return; // ASCII check: only accept characters in range 0-255
-                words[i>>2] |= j << ((3 - i)%4)*8;
+                if (j >> 8) return; // ASCII check: only accept characters in range 0-255
+                words[i >> 2] |= j << ((3 - i) % 4) * 8;
             }
-            words[words[lengthProperty]] = ((asciiBitLength/maxWord)|0);
+            words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
             words[words[lengthProperty]] = (asciiBitLength)
-            
+
             // process each chunk
             for (j = 0; j < words[lengthProperty];) {
                 var w = words.slice(j, j += 16); // The message is expanded into 64 words as part of the iteration
@@ -569,43 +574,43 @@ module.exports = function sysTools() {
                 // This is now the undefinedworking hash", often labelled as variables a...g
                 // (we have to truncate as well, otherwise extra entries at the end accumulate
                 hash = hash.slice(0, 8);
-                
+
                 for (i = 0; i < 64; i++) {
                     const i2 = i + j;
                     // Expand the message into 64 words
                     // Used below if 
                     const w15 = w[i - 15], w2 = w[i - 2];
-        
+
                     // Iterate
                     const a = hash[0], e = hash[4];
                     const temp1 = hash[7]
                         + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) // S1
-                        + ((e&hash[5])^((~e)&hash[6])) // ch
+                        + ((e & hash[5]) ^ ((~e) & hash[6])) // ch
                         + k[i]
                         // Expand the message schedule if needed
                         + (w[i] = (i < 16) ? w[i] : (
-                                w[i - 16]
-                                + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15>>>3)) // s0
-                                + w[i - 7]
-                                + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2>>>10)) // s1
-                            )|0
+                            w[i - 16]
+                            + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) // s0
+                            + w[i - 7]
+                            + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10)) // s1
+                        ) | 0
                         );
                     // This is only used once, so *could* be moved below, but it only saves 4 bytes and makes things unreadble
                     const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) // S0
-                        + ((a&hash[1])^(a&hash[2])^(hash[1]&hash[2])); // maj
-                    
-                    hash = [(temp1 + temp2)|0].concat(hash); // We don't bother trimming off the extra ones, they're harmless as long as we're truncating when we do the slice()
-                    hash[4] = (hash[4] + temp1)|0;
+                        + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2])); // maj
+
+                    hash = [(temp1 + temp2) | 0].concat(hash); // We don't bother trimming off the extra ones, they're harmless as long as we're truncating when we do the slice()
+                    hash[4] = (hash[4] + temp1) | 0;
                 }
-                
+
                 for (i = 0; i < 8; i++) {
-                    hash[i] = (hash[i] + oldHash[i])|0;
+                    hash[i] = (hash[i] + oldHash[i]) | 0;
                 }
             }
-            
+
             for (i = 0; i < 8; i++) {
                 for (j = 3; j + 1; j--) {
-                    const b = (hash[i]>>(j*8))&255;
+                    const b = (hash[i] >> (j * 8)) & 255;
                     result += ((b < 16) ? 0 : '') + b.toString(16);
                 }
             }
@@ -687,13 +692,13 @@ module.exports = function sysTools() {
             return struct2flat(tree);
         };
         //other
-        
+
         Context.GUID = function () {
             //not as in RFC, but unique enough and correct in validators. JS is 53-bits integer timestamp and no MICROseconds available
             let guid, yChar, xChar, timestamp;
             yChar = ['8', '9', 'a', 'b'];
-            xChar = ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'];
-            const atRandom = function (arr) {return arr[Math.floor(Math.random() * arr.length)]}
+            xChar = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+            const atRandom = function (arr) { return arr[Math.floor(Math.random() * arr.length)] }
             // in timestamp and guid arrays ignore the 0 index and work from 1
             // ommit the 0 index item at the end
             timestamp = ' 0' + Context.Now().toString(16);
@@ -711,20 +716,20 @@ module.exports = function sysTools() {
             // replace Y with allowed digit
             guid[20] = atRandom(yChar);
             // replace X positions with randoms
-            for(let i=16;i<=18;i++){
+            for (let i = 16; i <= 18; i++) {
                 guid[i] = atRandom(xChar)
             };
 
-            for(let i=21;i<=23;i++){
+            for (let i = 21; i <= 23; i++) {
                 guid[i] = atRandom(xChar)
             };
-            for(let i=25;i<=36;i++){
+            for (let i = 25; i <= 36; i++) {
                 guid[i] = atRandom(xChar)
             };
             // replace H positions with timestamp hex digits
-            for(let i=1;i<=8;i++){guid[i] = timestamp[i]};
-            for(let i=10;i<=13;i++){guid[i] = timestamp[i - 1]};
-            guid.shift();guid = guid.join('');
+            for (let i = 1; i <= 8; i++) { guid[i] = timestamp[i] };
+            for (let i = 10; i <= 13; i++) { guid[i] = timestamp[i - 1] };
+            guid.shift(); guid = guid.join('');
             return guid
         }
         /*
@@ -736,7 +741,7 @@ code.google.com/p/crypto-js/wiki/License
         Context.CryptoJS = function (u, p) {
             var d = {},
                 l = d.lib = {},
-                s = function () {},
+                s = function () { },
                 t = l.Base = {
                     extend: function (a) {
                         s.prototype = this;
@@ -754,7 +759,7 @@ code.google.com/p/crypto-js/wiki/License
                         a.init.apply(a, arguments);
                         return a
                     },
-                    init: function () {},
+                    init: function () { },
                     mixIn: function (a) {
                         for (var c in a) a.hasOwnProperty(c) && (this[c] = a[c]);
                         a.hasOwnProperty("toString") && (this.toString = a.toString)
@@ -1260,13 +1265,13 @@ code.google.com/p/crypto-js/wiki/License
                 blockSize: 4
             });
             var n = d.CipherParams = l.extend({
-                    init: function (a) {
-                        this.mixIn(a)
-                    },
-                    toString: function (a) {
-                        return (a || this.formatter).stringify(this)
-                    }
-                }),
+                init: function (a) {
+                    this.mixIn(a)
+                },
+                toString: function (a) {
+                    return (a || this.formatter).stringify(this)
+                }
+            }),
                 b = (p.format = {}).OpenSSL = {
                     stringify: function (a) {
                         var b = a.ciphertext;
@@ -1378,8 +1383,8 @@ code.google.com/p/crypto-js/wiki/License
                 e ? (e = z ^ a[a[a[G ^ z]]], j ^= a[a[j]]) : e = j = 1
             }
             var H = [0, 1, 2, 4, 8,
-                    16, 32, 64, 128, 27, 54
-                ],
+                16, 32, 64, 128, 27, 54
+            ],
                 d = d.AES = p.extend({
                     _doReset: function () {
                         for (var a = this._key, c = a.words, d = a.sigBytes / 4, a = 4 * ((this._nRounds = d + 6) + 1), e = this._keySchedule = [], j = 0; j < a; j++)
@@ -1408,7 +1413,7 @@ code.google.com/p/crypto-js/wiki/License
                         for (var m = this._nRounds, g = a[b] ^ c[0], h = a[b + 1] ^ c[1], k = a[b + 2] ^ c[2], n = a[b + 3] ^ c[3], p = 4, r = 1; r < m; r++) var q = d[g >>> 24] ^ e[h >>> 16 & 255] ^ j[k >>> 8 & 255] ^ l[n & 255] ^ c[p++],
                             s = d[h >>> 24] ^ e[k >>> 16 & 255] ^ j[n >>> 8 & 255] ^ l[g & 255] ^ c[p++],
                             t =
-                            d[k >>> 24] ^ e[n >>> 16 & 255] ^ j[g >>> 8 & 255] ^ l[h & 255] ^ c[p++],
+                                d[k >>> 24] ^ e[n >>> 16 & 255] ^ j[g >>> 8 & 255] ^ l[h & 255] ^ c[p++],
                             n = d[n >>> 24] ^ e[g >>> 16 & 255] ^ j[h >>> 8 & 255] ^ l[k & 255] ^ c[p++],
                             g = q,
                             h = s,

@@ -2,18 +2,19 @@ let _cookieName = 'sf-session-id';
 try {
     let tmp = Application.config.Session.CookieName;
     if (tmp != undefined) _cookieName = tmp;
-} catch (e) {}
+} catch (e) { }
 
 let CookieMaxAge = 900; //15 minutes
 if (!empty(Application.config.Session) && !empty(Application.config.Session.CookieMaxAge)) CookieMaxAge = Application.config.Session.CookieMaxAge;
 
 
-module.exports = class Session {
+module.exports = class Session extends BaseObject {
     static _cookieName = _cookieName
     static _storage = {}
     static _lastAccess = {}
-    static instance = class {
+    static instance = class extends BaseObject {
         constructor(session_id = '@') {
+            super();
             if (empty(Application.System.Session._storage[session_id])) Application.System.Session._storage[session_id] = {};
             this._storage = Application.System.Session._storage[session_id];
             this._session_id = session_id;

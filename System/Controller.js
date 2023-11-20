@@ -1,6 +1,7 @@
 //basic Sukina Framework controller
-module.exports = class Controller {
+module.exports = class Controller extends BaseObject {
     constructor(req, res, current_controller, current_action, current_route) {
+        super();
         this.req = req;
         this.res = res;
         this.result = {}
@@ -21,7 +22,7 @@ module.exports = class Controller {
         //define session instance
         try {
             this.Session = new Application.System.Session.instance(this.req[Application.System.Session._cookieName]);
-        } catch (e) {}
+        } catch (e) { }
     }
     async _before() {
         return this.result;

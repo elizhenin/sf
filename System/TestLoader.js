@@ -1,5 +1,6 @@
 //publish assertions in global
-const compareTwoArg = (arg1, arg2) => {
+
+const compareTwoArg = (arg1, arg2, strong = true) => {
     let result = false;
     let _expected;
     if (typeof arg1 == 'object') {
@@ -18,17 +19,27 @@ const compareTwoArg = (arg1, arg2) => {
         result = true;
         const _expected_keys = Object.keys(_expected);
         const _actual_keys = Object.keys(_actual);
-        if (_expected_keys.length === _actual_keys.length) {
-            for (const key of _expected_keys) {
-                if (_expected[key] != _actual[key]) { result = false; break; }
-            }
-        } else {
-            result = false;
+        if (strong) {
+            if (_expected_keys.length === _actual_keys.length) { } else { result = false; }
         }
+        if (result) for (const key of _expected_keys) {
+            if (_expected[key] != _actual[key]) { result = false; break; }
+        }
+
     } else {
         if (_expected == _actual) {
             result = true;
         }
+    }
+    return result;
+}
+global.assertIncludes = (expected, actual, message = '') => {
+    let result = compareTwoArg(expected, actual, false);
+    if (!result) {
+        console.log();
+        console.log('assertIncludes fail.', message);
+        console.log('Expected:', expected);
+        console.log('Given:', actual);
     }
     return result;
 }
@@ -109,8 +120,9 @@ global.assertObjectHasKey = (key, obj, message = '') => {
 }
 
 // export ClassLoader
-module.exports = class TestLoader {
+module.exports = class TestLoader extends BaseObject {
     constructor() {
+        super();
         console.log('');
         console.log('Running tests from ./Test/ :');
         const stat = {

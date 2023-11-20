@@ -1,5 +1,6 @@
-module.exports = class Scheduler{
+module.exports = class Scheduler extends BaseObject {
     constructor() {
+        super();
         this.Tasks = {};
         //System tasks
 
@@ -24,11 +25,11 @@ module.exports = class Scheduler{
             }
             if (!empty(Application.Scheduler.Periodic)) {
                 //periodic tasks
-                 /*
-                each task is one object with two fields
-                f: async function without parameters
-                t: integer with time interval in ms
-                */
+                /*
+               each task is one object with two fields
+               f: async function without parameters
+               t: integer with time interval in ms
+               */
                 for (let key in Application.Scheduler.Periodic) {
                     let task = Application.Scheduler.Periodic[key];
                     let task_body = async function () {
@@ -46,9 +47,9 @@ module.exports = class Scheduler{
         }
     }
 
-    addTask(func,periodic = false,time = 0,key = undefined){
-        if(!key) key = GUID();
-        if (!periodic || empty(time)){
+    addTask(func, periodic = false, time = 0, key = undefined) {
+        if (!key) key = GUID();
+        if (!periodic || empty(time)) {
             //do once
             let task_body = async function () {
                 try {
@@ -58,7 +59,7 @@ module.exports = class Scheduler{
                 }
             }
             setTimeout(task_body, time)
-        }else{
+        } else {
             //set interval
             let task_body = async function () {
                 try {
@@ -73,7 +74,7 @@ module.exports = class Scheduler{
         }
         return key;
     }
-    killTask(key){
+    killTask(key) {
         clearTimeout(this.Tasks[key]);
         delete this.Tasks[key];
     }

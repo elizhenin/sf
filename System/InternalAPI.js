@@ -49,7 +49,7 @@ if (!empty(Application.sysTools)) {
     })
 }
 
-module.exports = class InternalAPI{
+module.exports = class InternalAPI extends BaseObject {
     static injectClientApiScript(controller) {
         controller.result = controller.result.split('<head>').join(`<head>\n<script src="/@sf-internal-api/${controller._controller}"></script>`);
     }
@@ -102,7 +102,7 @@ module.exports = class InternalAPI{
             let apiCallCode = 'window.SF_servercall = ' + this.SF_servercall.split('{{apiToken}}').join(apiToken).split('{{Controller}}').join(controller._controller);
             controller.result = apiCallCode + '\n' + serverCode + '\n' + clientCode + '\n';
 
-            controller.result = (await minify(this.sysTools + '\n' +controller.result)).code;
+            controller.result = (await minify(this.sysTools + '\n' + controller.result)).code;
             controller.res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             controller.res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
         }
@@ -120,7 +120,7 @@ module.exports = class InternalAPI{
         let apiToken = false;
         if ("true" === req.headers['sf-internal-api-request']) {
             let Session = new Application.System.Session.instance(req.cookies[Application.System.Session._cookieName]);
-            apiToken = Session.get('sf-internal-api-token',false);
+            apiToken = Session.get('sf-internal-api-token', false);
             if (!empty(apiToken)) {
                 InternalAPIrequest = true;
             }
@@ -130,7 +130,7 @@ module.exports = class InternalAPI{
         };
         let SomeError = "";
         if (InternalAPIrequest) {
-            
+
             let call = req.body;
             call = CryptoJS.AES.decrypt(call, apiToken);
             call = call.toString(CryptoJS.enc.Utf8);
@@ -155,12 +155,12 @@ module.exports = class InternalAPI{
                     status: "success",
                     result: await _Controller['server_' + action](...arg)
                 };
-                if("undefined" === typeof result.result) result.result = null;
+                if ("undefined" === typeof result.result) result.result = null;
                 result.result = CryptoJS.AES.encrypt(JSON.stringify(result.result), apiToken).toString();
             } catch (e) {
                 //found error on controller.action stage
                 SomeError = "Application.Controller." + controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
-                console.log(e)
+                ErrorCatcher(e)
                 result = {
                     status: "error",
                     message: SomeError

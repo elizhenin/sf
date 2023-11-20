@@ -1,5 +1,6 @@
-module.exports = class {
+module.exports = class ViewJS extends BaseObject {
     constructor(viewName = null, req = null, res = null, i18n_lang = null) {
+        super()
         //add meta information
         this['@viewName'] = viewName;
         //add external data
@@ -71,20 +72,22 @@ module.exports = class {
             `const includeOnce = async function(viewName){
             if(_this["@loaded"][viewName]){}else{_this["@loaded"][viewName] = true;await include(viewName);}
         };\n`;
-        functionBody += this._parse()+`\n`;
+        functionBody += this._parse() + `\n`;
         functionBody += `})\n}\n`;
         let result = '';
         try {
             let func = eval(functionBody);
             result = await func(...Object.values(data), includeOnce_loaded);
         } catch (e) {
-            console.log('View name: ', this['@viewName']);
-            console.log(`${e.name}: ${e.message} \n${e.stack.split('\n')[1]}`);
+            let errorString = '';
+            errorString += `View name: ${this['@viewName']}\n`;
+            errorString += `${e.name}: ${e.message} \n${e.stack.split('\n')[1]}\n`;
             let trace_body = functionBody.split("\n");
-            console.log('Function body: ');
+            errorString += 'Function body: \n';
             for (let i in trace_body) {
-                console.log(i, trace_body[i])
-            }
+                errorString += `${i}\t ${trace_body[i]}\n`;
+            };
+            ErrorCatcher(errorString, this["@req"]);
             result = `<div><p>${e.toString()}</p><p>View name: <b>${this['@viewName']}</b></p></div>`;
         }
         return result;

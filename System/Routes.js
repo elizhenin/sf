@@ -1,11 +1,12 @@
-module.exports = class Routes {
+module.exports = class Routes extends BaseObject {
     constructor() {
+        super();
         let MaxListeners = Application.config.Server.MaxListeners * 1;
         this.ListenPort = Application.config.Server.Port * 1;
 
         this.server = Application.lib.http.createServer(async function (req, res) {
             let ActiveListeners = await getActiveListeners();
-          
+
             // Application.System.SrvLogger.access(req,res);
             if (ActiveListeners < MaxListeners) {
                 req.ip = req.headers['x-forwarded-for'] ||
@@ -31,9 +32,9 @@ module.exports = class Routes {
                         await Handler.router();
                         if (!Handler.Error) { //all ok
                             await Handler.send();
-                            Application.System.SrvLogger.access(req,res);
+                            Application.System.SrvLogger.access(req, res);
                         } else { //errors found
-                            console.log(Handler.Error.toString())
+                            console.log(Handler.Error.toString());
                             Application.System.SrvLogger.error(req, Handler.Error);
                             if (!res.writeableEnded) res.end(Handler.Error);
                         }
@@ -54,16 +55,16 @@ module.exports = class Routes {
     }
 };
 
-let getActiveListeners = function(){
-    return new Promise(function(resolve,reject){
-    Application.HTTP.server.getConnections(
-        function(error, count) {
-            resolve(count)
-        });
-})
+const getActiveListeners = function () {
+    return new Promise(function (resolve, reject) {
+        Application.HTTP.server.getConnections(
+            function (error, count) {
+                resolve(count)
+            });
+    })
 }
 
-let RequestHandler = class {
+const RequestHandler = class {
     constructor(req, res) {
         this.req = req;
         this.res = res;
@@ -330,14 +331,14 @@ let RequestHandler = class {
                 let result = false;
                 try {
                     result = JSON.parse(body.toString())
-                } catch (e) {}
+                } catch (e) { }
                 return result
             },
             "text/plain": async function (body, ContentTypeParams) {
                 let result = "";
                 try {
                     result = body.toString()
-                } catch (e) {}
+                } catch (e) { }
                 return result
             },
             "application/x-www-form-urlencoded": async function (body) {
@@ -398,7 +399,7 @@ let RequestHandler = class {
                     acceptEncoding[i] = acceptEncoding[i].trim().toLowerCase().split(';')[0];
                 }
             }
-            return (acceptEncoding.indexOf('deflate')? true:false)
+            return (acceptEncoding.indexOf('deflate') ? true : false)
         },
         deflate(payload) {
             return new Promise(function (resolve, reject) {
@@ -430,9 +431,9 @@ let RequestHandler = class {
     }
 };
 
-let multipartFormParser = class {
+const multipartFormParser = class {
     /**
-     	Multipart Parser (Finite State Machine)
+          Multipart Parser (Finite State Machine)
         Author:  Cristian Salazar (christiansalazarh@gmail.com) www.chileshift.cl
         Modified to class-style by Evgeny Lizhenin (elizhenin@gmail.com)
     
@@ -471,47 +472,47 @@ let multipartFormParser = class {
                     }
                     lastline = '';
                 } else
-                if ((1 == state) && newLineDetected) {
-                    header = lastline;
-                    state = 2;
-                    lastline = '';
-                } else
-                if ((2 == state) && newLineDetected) {
-                    info = lastline;
-                    state = 3;
-                    lastline = '';
-                } else
-                if ((3 == state) && newLineDetected) {
-                    state = 4;
-                    buffer = [];
-                    lastline = '';
-                } else
-                if (4 == state) {
-                    if (lastline.length > (this.boundary.length + 4)) lastline = ''; // mem save
-                    if (((("--" + this.boundary) == lastline))) {
-                        let j = buffer.length - lastline.length;
-                        let part = buffer.slice(0, j - 1);
-                        let p = {
-                            header: header,
-                            info: info,
-                            part: part
-                        };
-                        let [fieldName, readyPart] = this._processPart(p);
-                        allParts[fieldName] = readyPart;
-                        buffer = [];
+                    if ((1 == state) && newLineDetected) {
+                        header = lastline;
+                        state = 2;
                         lastline = '';
-                        state = 5;
-                        header = '';
-                        info = '';
-                    } else {
-                        buffer.push(oneByte);
-                    }
-                    if (newLineDetected) lastline = '';
-                } else
-                if (5 == state) {
-                    if (newLineDetected)
-                        state = 1;
-                }
+                    } else
+                        if ((2 == state) && newLineDetected) {
+                            info = lastline;
+                            state = 3;
+                            lastline = '';
+                        } else
+                            if ((3 == state) && newLineDetected) {
+                                state = 4;
+                                buffer = [];
+                                lastline = '';
+                            } else
+                                if (4 == state) {
+                                    if (lastline.length > (this.boundary.length + 4)) lastline = ''; // mem save
+                                    if (((("--" + this.boundary) == lastline))) {
+                                        let j = buffer.length - lastline.length;
+                                        let part = buffer.slice(0, j - 1);
+                                        let p = {
+                                            header: header,
+                                            info: info,
+                                            part: part
+                                        };
+                                        let [fieldName, readyPart] = this._processPart(p);
+                                        allParts[fieldName] = readyPart;
+                                        buffer = [];
+                                        lastline = '';
+                                        state = 5;
+                                        header = '';
+                                        info = '';
+                                    } else {
+                                        buffer.push(oneByte);
+                                    }
+                                    if (newLineDetected) lastline = '';
+                                } else
+                                    if (5 == state) {
+                                        if (newLineDetected)
+                                            state = 1;
+                                    }
             }
 
         return allParts;

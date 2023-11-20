@@ -70,7 +70,7 @@
         Application.lib.cluster.on('exit', function (worker) {
 
             // Replace the dead worker
-            console.log('Worker ' + worker.id + ' died and replaced');
+            ErrorCatcher('Worker ' + worker.id + ' died and replaced');
             Application.lib.cluster.fork();
 
         });

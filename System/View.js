@@ -1,8 +1,9 @@
 // View parse with small scripting support
 
-module.exports = class View {
+module.exports = class View extends BaseObject {
 
     constructor(view_name = null, req = null, res = null, lang = null) {
+        super();
         // marker brackets:
         this.markerBefore = '{{';
         this.markerAfter = '}}';
@@ -68,7 +69,7 @@ module.exports = class View {
             for_list = undefined;
             other_list = undefined;
 
-        } catch (e) {}
+        } catch (e) { }
     };
 
     //from variable
@@ -281,7 +282,7 @@ module.exports = class View {
                                 } else {
                                     if (cleanup) {
                                         this.html = BeforeBlock + AfterBlock;
-                                    } else ErrorCatcher('Warning: View ' + view_path + ' not found')
+                                    } else ErrorCatcher('Warning: View ' + view_path + ' not found', this.req)
                                 }
 
                             }
@@ -309,7 +310,7 @@ module.exports = class View {
                                     let New_Block = ObjSelector(global, code_path);
                                     this.html = BeforeBlock + await New_Block(this.req, this.res, this._data) + AfterBlock;
                                 } else {
-                                    ErrorCatcher('Error: Function ' + code_path + '() not found')
+                                    ErrorCatcher('Error: Function ' + code_path + '() not found', this.req)
                                 }
                             } else {
                                 if (cleanup) {
@@ -342,7 +343,7 @@ module.exports = class View {
                             break;
                         }
 
-                        default: {}
+                        default: { }
                     }
 
                 } else {
@@ -356,12 +357,12 @@ module.exports = class View {
                             }
                         }
                     } catch (e) {
-                        ErrorCatcher(e);
+                        ErrorCatcher(e, this.req);
                     }
                 }
 
             } catch (e) {
-                ErrorCatcher(e)
+                ErrorCatcher(e, this.req)
             }
         }
 
