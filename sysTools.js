@@ -18,8 +18,9 @@ module.exports = function sysTools() {
             }
         }
         Context.ObjSelector = function (SourceObj, ClassPath, createIfUndefined = false) {
-            //recusive get object by class path "className1.className2.className3.[etc N times].."
-            let ClassPathArray = ClassPath.split('.');
+            //recusive get property from object by path string "className1.className2.className3.[etc N times].." or array ['className1','className2',...] in same way
+            let ClassPathArray = ClassPath; 
+            if (!Array.isArray(ClassPathArray)) ClassPathArray = ClassPath.toString().split('.');
             let ObjSelected = SourceObj;
             for (i = 0; i < ClassPathArray.length; i++) {
                 if ("undefined" === typeof ObjSelected[ClassPathArray[i]]) {
@@ -65,6 +66,31 @@ module.exports = function sysTools() {
             }
             return isEmpty;
         };
+
+        Context.mb_stripos = function (haystack, needle, offset = 0) {
+            return mb_strpos(haystack.toString().toLowerCase(), needle.toString().toLowerCase(), offset);
+        }
+        Context.mb_strpos = function (haystack, needle, offset = 0) {
+            let tmp = haystack.slice(offset);
+            tmp = tmp.split(needle);
+            return tmp.length < 2 ? false : tmp[0].length;
+        }
+        Context.str_shuffle = function (str) { return str.split('').sort(function () { return 0.5 - Math.random() }).join(''); };
+        Context.array_rand = function (arr) { return arr[Math.floor(Math.random() * arr.length)] }
+        Context.array_column = function (array, column_key, index_key = null) {
+            let result = {};
+            if (index_key === null) {
+                result = [];
+            }
+            for (const row of array) {
+                if (index_key === null) {
+                    result.push(row[column_key]);
+                } else {
+                    result[row[index_key]] = [row[column_key]]
+                }
+            }
+            return result;
+        }
         Context.use = function (obj) {
             /* 
              example. At the top of your component:
@@ -698,7 +724,7 @@ module.exports = function sysTools() {
             let guid, yChar, xChar, timestamp;
             yChar = ['8', '9', 'a', 'b'];
             xChar = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-            const atRandom = function (arr) { return arr[Math.floor(Math.random() * arr.length)] }
+            
             // in timestamp and guid arrays ignore the 0 index and work from 1
             // ommit the 0 index item at the end
             timestamp = ' 0' + Context.Now().toString(16);
@@ -714,17 +740,17 @@ module.exports = function sysTools() {
             guid[19] = '-';
             guid[24] = '-';
             // replace Y with allowed digit
-            guid[20] = atRandom(yChar);
+            guid[20] = array_rand(yChar);
             // replace X positions with randoms
             for (let i = 16; i <= 18; i++) {
-                guid[i] = atRandom(xChar)
+                guid[i] = array_rand(xChar)
             };
 
             for (let i = 21; i <= 23; i++) {
-                guid[i] = atRandom(xChar)
+                guid[i] = array_rand(xChar)
             };
             for (let i = 25; i <= 36; i++) {
-                guid[i] = atRandom(xChar)
+                guid[i] = array_rand(xChar)
             };
             // replace H positions with timestamp hex digits
             for (let i = 1; i <= 8; i++) { guid[i] = timestamp[i] };

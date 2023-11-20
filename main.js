@@ -94,7 +94,7 @@
         Application._appReady = true;
         new Application.System.AppLoader();
 
-        let _continueInit = function () {
+        let _continueInit = async function () {
             if (Application._appReady) {
                 //save class init order
                 let ClassLoadingOrderRebuild = Application.config.Server.ClassLoadingOrderRebuild ?? 'true';
@@ -105,7 +105,8 @@
                 //set up databases
                 Application.DB = {};
                 for (let key in Application.database) {
-                    Application.DB[key] = require('knex')(Application.database[key]);
+                    const db_config = Application.database[key];
+                    Application.DB[key] = require('knex')(db_config);
                 }
 
                 //start listening
@@ -119,7 +120,7 @@
 
             } else setTimeout(_continueInit, 100);
         }
-        _continueInit();
+        await _continueInit();
     }
 
     //finish main code, do the work

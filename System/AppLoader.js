@@ -15,7 +15,7 @@ module.exports = class AppLoader extends BaseObject {
                 if (Application.lib.fs.lstatSync(Application.lib.path.join(Directory, item)).isDirectory()) {
                     //add dir for future work
                     SubcollectionList.push(item);
-                    rootNode[item] = {}
+                    rootNode[item] = ObjSelector(rootNode,item,true);
                 } else {
                     const ext = item.split('.').reverse()[0].toLowerCase();
                     switch (ext) {
