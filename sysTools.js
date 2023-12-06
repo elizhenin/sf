@@ -19,7 +19,7 @@ module.exports = function sysTools() {
         }
         Context.ObjSelector = function (SourceObj, ClassPath, createIfUndefined = false) {
             //recusive get property from object by path string "className1.className2.className3.[etc N times].." or array ['className1','className2',...] in same way
-            let ClassPathArray = ClassPath; 
+            let ClassPathArray = ClassPath;
             if (!Array.isArray(ClassPathArray)) ClassPathArray = ClassPath.toString().split('.');
             let ObjSelected = SourceObj;
             for (i = 0; i < ClassPathArray.length; i++) {
@@ -692,6 +692,17 @@ module.exports = function sysTools() {
 
             return flat;
         }
+        Context.flat2struct = function (flatObj) {
+            const res = {};
+            for (const flatKey of Object.keys(flatObj)) {
+                let path = flatKey.split('.');
+                const key = path.pop();
+                path.join('.');
+                const branch = ObjSelector(res, path, true);
+                branch[key] = flatObj[flatKey];
+            }
+            return res;
+        }
         Context.list2tree = function (list) {
             let map = {},
                 node, roots = [],
@@ -724,7 +735,7 @@ module.exports = function sysTools() {
             let guid, yChar, xChar, timestamp;
             yChar = ['8', '9', 'a', 'b'];
             xChar = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
-            
+
             // in timestamp and guid arrays ignore the 0 index and work from 1
             // ommit the 0 index item at the end
             timestamp = ' 0' + Context.Now().toString(16);

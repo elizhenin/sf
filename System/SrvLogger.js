@@ -1,4 +1,4 @@
-module.exports = class SrvLogger extends BaseObject {
+class SrvLogger extends BaseObject {
     static access_file = Application.lib.path.join(Application._dirname, Application.config.Server.AccessLog)
     static error_file = Application.lib.path.join(Application._dirname, Application.config.Server.ErrorLog)
 
@@ -32,3 +32,11 @@ module.exports = class SrvLogger extends BaseObject {
         Application.lib.fs.appendFile(this.error_file, row, (err) => { });
     }
 }
+
+//override global error catcher
+global.ErrorCatcher = function (e, req = null) {
+    console.log(e);
+    SrvLogger.error(req, e);
+}
+
+module.exports = SrvLogger;
