@@ -23,10 +23,13 @@ module.exports = function sysTools() {
             if (!Array.isArray(ClassPathArray)) ClassPathArray = ClassPath.toString().split('.');
             let ObjSelected = SourceObj;
             for (i = 0; i < ClassPathArray.length; i++) {
-                if ("undefined" === typeof ObjSelected[ClassPathArray[i]]) {
+                const nextVal = ObjSelected[ClassPathArray[i]];
+                //TODO here is hotfix for exception case where trying to get property of null.
+                //But now it return null instead of undefined while null is any step of path, not only while last.
+                if (null === nextVal || "undefined" === typeof nextVal) {
                     if (createIfUndefined) ObjSelected[ClassPathArray[i]] = {};
                     else {
-                        ObjSelected = undefined;
+                        ObjSelected = nextVal;
                         break;
                     }
                 }
@@ -35,7 +38,17 @@ module.exports = function sysTools() {
             }
             return ObjSelected;
         }
-
+        Context.asType = function (_in) {
+            try {
+                if (_in.toLowerCase() === 'true') return true;
+                if (_in.toLowerCase() === 'false') return false;
+                if (_in.toLowerCase() === 'null') return null;
+                if (_in.toLowerCase() === 'nan') return NaN;
+                if (_in.toLowerCase() === 'undefined') return undefined;
+                if (_in == parseFloat(_in)) return parseFloat(_in);
+            } catch (e) { }
+            return _in;
+        }
         //add some useful functions from php
         Context.empty = function (v) {
             let isEmpty = false;

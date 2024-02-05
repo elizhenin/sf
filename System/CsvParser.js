@@ -9,12 +9,7 @@ module.exports = class CsvParser extends Array{
         for (let row of jsonObj) {
             const keys = Object.keys(row);
             for (const k of keys) {
-                if (row[k].toLowerCase() === 'true') row[k] = true;
-                if (row[k].toLowerCase() === 'false') row[k] = false;
-                if (row[k].toLowerCase() === 'null') row[k] = null;
-                if (row[k].toLowerCase() === 'nan') row[k] = NaN;
-                if (row[k].toLowerCase() === 'undefined') row[k] = undefined;
-                if (row[k] == parseFloat(row[k])) row[k] = parseFloat(row[k]);
+                row[k] = asType(row[k]);
             }
             this.push(row);
         }
