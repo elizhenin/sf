@@ -1,5 +1,3 @@
-//publish assertions in global
-
 const compareTwoArg = (arg1, arg2, strong = true) => {
     let result = false;
     let _expected;
@@ -33,94 +31,99 @@ const compareTwoArg = (arg1, arg2, strong = true) => {
     }
     return result;
 }
-global.assertIncludes = (expected, actual, message = '') => {
-    let result = compareTwoArg(expected, actual, false);
-    if (!result) {
-        console.log();
-        console.log('assertIncludes fail.', message);
-        console.log('Expected:', expected);
-        console.log('Given:', actual);
+class Assertions extends BaseObject {
+    constructor() {
+        super();
+        //publish assertions in global
+        global.assertIncludes = (expected, actual, message = '') => {
+            let result = compareTwoArg(expected, actual, false);
+            if (!result) {
+                console.log();
+                console.log('assertIncludes fail.', message);
+                console.log('Expected:', expected);
+                console.log('Given:', actual);
+            }
+            return result;
+        }
+        global.assertEquals = (expected, actual, message = '') => {
+            let result = compareTwoArg(expected, actual);
+            if (!result) {
+                console.log();
+                console.log('assertEquals fail.', message);
+                console.log('Expected:', expected);
+                console.log('Given:', actual);
+            }
+            return result;
+        }
+        global.assertNotEquals = (expected, actual, message = '') => {
+            let result = !compareTwoArg(expected, actual);
+            if (!result) {
+                console.log();
+                console.log('assertNotEquals fail.', message);
+                console.log('Expected:', expected);
+                console.log('Given:', actual);
+            }
+            return result;
+        }
+        global.assertEmpty = (dataHolder, message = '') => {
+            let result = false;
+            if (empty(dataHolder)) {
+                result = true;
+            }
+            if (!result) {
+                console.log();
+                console.log('assertEmpty fail.', message);
+                console.log('Given:', dataHolder);
+            }
+            return result;
+        }
+        global.assertNotEmpty = (dataHolder, message = '') => {
+            let result = false;
+            if (!empty(dataHolder)) {
+                result = true;
+            }
+            if (!result) {
+                console.log();
+                console.log('assertNotEmpty fail.', message);
+                console.log('Given:', dataHolder);
+            }
+            return result;
+        }
+        global.assertTrue = (actual, message = '') => {
+            let result = compareTwoArg(true, !!actual);
+            if (!result) {
+                console.log();
+                console.log('assertTrue fail.', message);
+                console.log('Given:', actual);
+            }
+            return result;
+        }
+        global.assertFalse = (actual, message = '') => {
+            let result = compareTwoArg(false, !!actual);
+            if (!result) {
+                console.log();
+                console.log('assertFalse fail.', message);
+                console.log('Given:', actual);
+            }
+            return result;
+        }
+        global.assertObjectHasKey = (key, obj, message = '') => {
+            let result = false;
+            if (Object.keys(obj).indexOf(key) > -1) {
+                result = true
+            }
+            if (!result) {
+                console.log();
+                console.log('assertObjectHasKey fail.', message);
+                console.log('Key:', key);
+                console.log('Object:', obj);
+            }
+            return result;
+        }
     }
-    return result;
 }
-global.assertEquals = (expected, actual, message = '') => {
-    let result = compareTwoArg(expected, actual);
-    if (!result) {
-        console.log();
-        console.log('assertEquals fail.', message);
-        console.log('Expected:', expected);
-        console.log('Given:', actual);
-    }
-    return result;
-}
-global.assertNotEquals = (expected, actual, message = '') => {
-    let result = !compareTwoArg(expected, actual);
-    if (!result) {
-        console.log();
-        console.log('assertNotEquals fail.', message);
-        console.log('Expected:', expected);
-        console.log('Given:', actual);
-    }
-    return result;
-}
-global.assertEmpty = (dataHolder, message = '') => {
-    let result = false;
-    if (empty(dataHolder)) {
-        result = true;
-    }
-    if (!result) {
-        console.log();
-        console.log('assertEmpty fail.', message);
-        console.log('Given:', dataHolder);
-    }
-    return result;
-}
-global.assertNotEmpty = (dataHolder, message = '') => {
-    let result = false;
-    if (!empty(dataHolder)) {
-        result = true;
-    }
-    if (!result) {
-        console.log();
-        console.log('assertNotEmpty fail.', message);
-        console.log('Given:', dataHolder);
-    }
-    return result;
-}
-global.assertTrue = (actual, message = '') => {
-    let result = compareTwoArg(true, !!actual);
-    if (!result) {
-        console.log();
-        console.log('assertTrue fail.', message);
-        console.log('Given:', actual);
-    }
-    return result;
-}
-global.assertFalse = (actual, message = '') => {
-    let result = compareTwoArg(false, !!actual);
-    if (!result) {
-        console.log();
-        console.log('assertFalse fail.', message);
-        console.log('Given:', actual);
-    }
-    return result;
-}
-global.assertObjectHasKey = (key, obj, message = '') => {
-    let result = false;
-    if (Object.keys(obj).indexOf(key) > -1) {
-        result = true
-    }
-    if (!result) {
-        console.log();
-        console.log('assertObjectHasKey fail.', message);
-        console.log('Key:', key);
-        console.log('Object:', obj);
-    }
-    return result;
-}
-
 // export ClassLoader
-module.exports = class TestLoader extends BaseObject {
+module.exports = class TestLoader extends Assertions {
     constructor() {
         super();
         console.log('');

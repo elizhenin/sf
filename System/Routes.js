@@ -1,3 +1,14 @@
+class ObjectRoute {
+    constructor(route) {
+        this.name = route?.name ?? null; //just as comment, not in use
+        this.method = route?.method ?? null; //HTTP method to strict request if it is set
+        this.namespace = route?.namespace ?? null; //Application.Controller.{namespace}.<controller> base dir to search controller
+        this.controller = route?.controller ?? null; //Controller name
+        this.action = route?.action ?? null; // action name
+        this.uri = route?.uri ?? null; // uri pattern for this route
+    }
+}
+
 module.exports = class Routes extends BaseObject {
     constructor() {
         super();
@@ -218,7 +229,8 @@ const RequestHandler = class {
                 //detect route match
                 switch (type_of_route) {
                     case "object": {
-                        for (let route of domainsRoutes) {
+                        for (let _route of domainsRoutes) {
+                            const route = new ObjectRoute(_route);
                             let match = Application.lib['path-to-regexp'].match(route.uri, {
                                 encode: encodeURI,
                                 decode: decodeURIComponent
@@ -238,6 +250,17 @@ const RequestHandler = class {
                                 })
                                 this.req.params = params;
 
+                                //namespace is a base Controllers subdirectory to search controller
+                                if (!empty(route.namespace)) {
+                                    //experimental. Try to use url params in namespace
+                                    let namespace = route.namespace;
+                                    const nsParser = new Application.System.ViewJS();
+                                    nsParser.factory(namespace);
+                                    Object.assign(nsParser, params);
+                                    namespace = await nsParser.render();
+                                    
+                                    Controller = [namespace, Controller].join('.');
+                                }
                                 if (!empty(route.method)) {
                                     /* method is stricted - compare with request*/
                                     if (route.method.toLowerCase() === this.req.method.toLowerCase())

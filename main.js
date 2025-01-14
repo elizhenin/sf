@@ -31,7 +31,7 @@
     Application.config.Directories.App = "Application";
     Application.config.Directories.Test = "Test";
     Application.config.Directories.AppPublic = "Public";
-    for (key in Application.config.Directories) {
+    for (const key in Application.config.Directories) {
         Application.config.Directories[key] = Application.lib.path.join(Application._dirname, Application.config.Directories[key]);
     }
 
@@ -63,7 +63,7 @@
     if (Application.lib.cluster.isMaster) { // master process
 
         // Create a workers group
-        for (var i = 0; i < Application.config.CPU.Workers; i += 1) {
+        for (let i = 0; i < Application.config.CPU.Workers; i++) {
             Application.lib.cluster.fork();
         }
         // Listen for dying workers

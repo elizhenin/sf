@@ -1,6 +1,6 @@
 const parseCSV = use(Application.lib['csv-load-sync'].parseCSV);
 
-module.exports = class CsvParser extends Array{
+module.exports = class CsvParser extends Array {
 
     constructor(string) {
         super();
