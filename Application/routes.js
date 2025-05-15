@@ -32,7 +32,7 @@ module.exports = {
         method: 'get',
         uri: '/viewjs',
         controller: 'Welcome',
-        action:'viewjs'
+        action: 'viewjs'
     },
     {
         name: 'Api requests',
@@ -42,13 +42,13 @@ module.exports = {
         action: 'noaction'
     },
     {
-        name:'Articles sample route',
-        method:'get',
-        uri:'/:controller/:action?', //as in Express.js
+        name: 'Articles sample route',
+        method: 'get',
+        uri: '/:controller/:action?', //as in Express.js
         action: 'index',//default action
     }
     ],
-    'otherDomain.ru':"",
+    'otherDomain.ru': "",
     //for localhost, auto routing
-    'localhost':""
+    'localhost': ""
 };

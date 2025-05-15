@@ -1,15 +1,17 @@
 <div>
-    Hello World
+  Hello World
 </div>
 <div>
-    View tests<br>
-<?js
+  View tests<br>
+  <?js
      if("my test string" == foo){
 ?>
   Here is true block - ${yes}
-<?js if(!empty(bar)) { ?> Here also true <?js }
+  <?js if(!empty(bar)) { ?> Here also true
+  <?js }
 
-}else{ ?> And false block ${no} <?js }
+}else{ ?> And false block ${no}
+  <?js }
 ?>
 </div>
 ${toRuDateString(new Date(date))}<br>

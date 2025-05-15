@@ -14,7 +14,7 @@ await LCRUD.<Operation>()
 */
 
 module.exports = class extends Application.System.Model {
- 
+
     async With(table) {
         this._selected_table = table;
         return this;

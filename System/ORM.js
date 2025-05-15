@@ -95,16 +95,16 @@ module.exports = class ORM {
     async factory(modelName = undefined) {
         let model;
         if (this._db === "default") model = ObjSelector(Application, 'ORM', true);
-        else  model = ObjSelector(Application, 'ORM.' + this._db, true);
+        else model = ObjSelector(Application, 'ORM.' + this._db, true);
 
         let models = [];
-        if(empty(modelName)){
+        if (empty(modelName)) {
             let Object_keys_global = Object.keys(global)
             Object_keys_global.forEach(key => {
                 if (key.startsWith('Model_')) models.push(key)
             })
             Object_keys_global = undefined;
-        }else{
+        } else {
             models.push(modelName)
         }
 
@@ -155,24 +155,24 @@ module.exports = class ORM {
             await this.read();
         }
 
-        async delete(id){
+        async delete(id) {
             await this["@id"].delete();
         }
-        async new(row = {}){
-            let newObject = new Application.System.ORM.Instance(this,0);
+        async new(row = {}) {
+            let newObject = new Application.System.ORM.Instance(this, 0);
             let pairs = newObject['@pairs'];
             let _row = {};
-            
-            for(let i in _row){
+
+            for (let i in _row) {
                 _row[pairs[i][1]] = null;
             }
 
-            for(let i in row){
+            for (let i in row) {
                 _row[pairs[i][1]] = row[i];
             }
             let db = this.db;
             let id = (await db.insert(_row).into(this['@struct'].table))[0];
-            this[id] = new Application.System.ORM.Instance(this,id);
+            this[id] = new Application.System.ORM.Instance(this, id);
             this[id].read();
             return this[id];
         }
@@ -225,8 +225,8 @@ module.exports = class ORM {
                     writeable: true
                 }
                 if (!empty(
-                        model['@struct'].relay[fieldname]
-                    )) {
+                    model['@struct'].relay[fieldname]
+                )) {
                     //read content and retrieve instance of relayed object
                     config.get = async function () {
                         let row = await db.select(columnname).from(model['@struct'].table).where(model['@struct'].id, '=', id).limit(1);
@@ -269,8 +269,8 @@ module.exports = class ORM {
                 if (fieldset.indexOf(field) > -1) {
                     o[field] = await this[pairs[i][0]];
                     if (!empty(
-                            model['@struct'].relay[field]
-                        )) {
+                        model['@struct'].relay[field]
+                    )) {
                         if (!empty(o[field])) o[field] = o[field]['@id'];
                         else o[field] = null;
                         if (fullTree && !empty(o[field])) {
@@ -283,10 +283,10 @@ module.exports = class ORM {
             return o;
         }
 
-        async delete(){
+        async delete() {
             let model = this['@model'];
             let db = model.db;
-            await db.where(model['@struct'].id,'=',this['@id']).del().into(model['@struct'].table);
+            await db.where(model['@struct'].id, '=', this['@id']).del().into(model['@struct'].table);
             delete model[this['@id']];
         }
     }

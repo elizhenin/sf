@@ -25,7 +25,7 @@ module.exports = class extends Application.System.Controller {
         return JSON.stringify(this.result);
     }
 
-    async action_noaction() {}
+    async action_noaction() { }
     async action_LCRUD() {
         if (this.result.status == 'error') {
 
