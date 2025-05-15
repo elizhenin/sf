@@ -9,7 +9,7 @@ module.exports = function sysTools() {
                 return empty(this.constructor.name) ? null : this.constructor.name;
             }
         }
-        Context.Now = function () {
+        Context.Now = function Now() {
             if (empty(arguments)) return new Date().getTime()
             else {
                 let r = new Date();
@@ -17,28 +17,28 @@ module.exports = function sysTools() {
                 return r
             }
         }
-        Context.ObjSelector = function (SourceObj, ClassPath, createIfUndefined = false) {
+        Context.ObjSelector = function ObjSelector(SourceObj, ClassPath, createIfUndefined = false) {
             //recusive get property from object by path string "className1.className2.className3.[etc N times].." or array ['className1','className2',...] in same way
             let ClassPathArray = ClassPath;
             if (!Array.isArray(ClassPathArray)) ClassPathArray = ClassPath.toString().split('.');
             let ObjSelected = SourceObj;
-            for (i = 0; i < ClassPathArray.length; i++) {
-                const nextVal = ObjSelected[ClassPathArray[i]];
+            for (let classPath of ClassPathArray) {
+                const nextVal = ObjSelected[classPath];
                 //TODO here is hotfix for exception case where trying to get property of null.
                 //But now it return null instead of undefined while null is any step of path, not only while last.
                 if (null === nextVal || "undefined" === typeof nextVal) {
-                    if (createIfUndefined) ObjSelected[ClassPathArray[i]] = {};
+                    if (createIfUndefined) ObjSelected[classPath] = {};
                     else {
                         ObjSelected = nextVal;
                         break;
                     }
                 }
 
-                ObjSelected = ObjSelected[ClassPathArray[i]];
+                ObjSelected = ObjSelected[classPath];
             }
             return ObjSelected;
         }
-        Context.asType = function (_in) {
+        Context.asType = function asType(_in) {
             try {
                 if (_in.toLowerCase() === 'true') return true;
                 if (_in.toLowerCase() === 'false') return false;
@@ -50,47 +50,47 @@ module.exports = function sysTools() {
             return _in;
         }
         //add some useful functions from php
-        Context.empty = function (v) {
+        Context.empty = function empty(v) {
             let isEmpty = false;
             let type = typeof v;
             if (null == v) type = "undefined";
             switch (type) {
-                case 'string': {
-                    if (v.trim().length == 0) isEmpty = true;
-                    break;
-                }
-                case 'number': {
-                    if (v == 0 || isNaN(v)) isEmpty = true;
-                    break;
-                }
-                case 'object': {
-                    if (Array.isArray(v) && v.length == 0) isEmpty = true;
-                    if (Object.keys(v).length == 0) isEmpty = true;
+                case 'undefined': {
+                    isEmpty = true; return isEmpty;
                     break;
                 }
                 case 'boolean': {
-                    isEmpty = !v;
+                    isEmpty = !v; return isEmpty;
                     break;
                 }
-                case 'undefined': {
-                    isEmpty = true;
+                case 'string': {
+                    if (v.trim().length == 0) { isEmpty = true; return isEmpty; }
+                    break;
+                }
+                case 'number': {
+                    if (v == 0 || isNaN(v)) { isEmpty = true; return isEmpty; }
+                    break;
+                }
+                case 'object': {
+                    if (Array.isArray(v) && v.length == 0) { isEmpty = true; return isEmpty; }
+                    if (Object.keys(v).length == 0) { isEmpty = true; return isEmpty; }
                     break;
                 }
             }
             return isEmpty;
         };
 
-        Context.mb_stripos = function (haystack, needle, offset = 0) {
+        Context.mb_stripos = function mb_stripos(haystack, needle, offset = 0) {
             return mb_strpos(haystack.toString().toLowerCase(), needle.toString().toLowerCase(), offset);
         }
-        Context.mb_strpos = function (haystack, needle, offset = 0) {
+        Context.mb_strpos = function mb_strpos(haystack, needle, offset = 0) {
             let tmp = haystack.slice(offset);
             tmp = tmp.split(needle);
             return tmp.length < 2 ? false : tmp[0].length;
         }
-        Context.str_shuffle = function (str) { return str.split('').sort(function () { return 0.5 - Math.random() }).join(''); };
-        Context.array_rand = function (arr) { return arr[Math.floor(Math.random() * arr.length)] }
-        Context.array_column = function (array, column_key, index_key = null) {
+        Context.str_shuffle = function str_shuffle(str) { return str.split('').sort(function () { return 0.5 - Math.random() }).join(''); };
+        Context.array_rand = function array_rand(arr) { return arr[Math.floor(Math.random() * arr.length)] }
+        Context.array_column = function array_column(array, column_key, index_key = null) {
             let result = {};
             if (index_key === null) {
                 result = [];
@@ -104,7 +104,7 @@ module.exports = function sysTools() {
             }
             return result;
         }
-        Context.use = function (obj) {
+        Context.use = function use(obj) {
             /* 
              example. At the top of your component:
              const myFooLibrary = use(Application.Library.Foo);
@@ -112,24 +112,25 @@ module.exports = function sysTools() {
              if Application.Library.Foo doesn't loaded yet, use() forces error, and this component will be loaded later
             */
             if (typeof obj === 'undefined') {
+                //console.log(new Error())
                 class invokeUseError extends undefined { }
             }
             return obj;
         }
-        Context.htmlspecialchars = function (string) {
+        Context.htmlspecialchars = function htmlspecialchars(string) {
             let result = string;
             if (!empty(string))
                 result = string.split('&').join('&amp;').split('<').join('&lt;').split('>').join('&gt;').split('\'').join('&apos;').split('"').join('&quot;');
             return result
         };
-        Context.htmlspecialchars_decode = function (string) {
+        Context.htmlspecialchars_decode = function htmlspecialchars_decode(string) {
             let result = string;
             if (!empty(string))
                 result = string.split('&amp;').join('&').split('&lt;').join('<').split('&gt;').join('>').split('&apos;').join('\'').split('&quot;').join('"');
             return result
         };
 
-        Context.striptags = function (string) {
+        Context.striptags = function striptags(string) {
             let regex = /(<([^>]+)>)/ig;
             let result = string;
             if (!empty(string))
@@ -137,19 +138,19 @@ module.exports = function sysTools() {
             return result
         };
 
-        Context.trim = function (string) {
+        Context.trim = function trim(string) {
             let result = ""
             if ("undefined" !== typeof string) result = string.toString().trim();
             return result
         }
 
-        Context.explode = function (divider, string) {
+        Context.explode = function explode(divider, string) {
             let result = []
             if ("undefined" !== typeof string) result = string.toString().split(divider);
             return result
         }
 
-        Context.base64_encode = function (str) {
+        Context.base64_encode = function base64_encode(str) {
             if ("undefined" !== typeof Buffer) {
                 return new Buffer.from(str).toString('base64');
             } else {
@@ -221,7 +222,7 @@ module.exports = function sysTools() {
 
         };
 
-        Context.base64_decode = function (str) {
+        Context.base64_decode = function base64_decode(str) {
             if ("undefined" !== typeof Buffer) {
                 return new Buffer.from(str, 'base64').toString();
             } else {
@@ -300,7 +301,7 @@ module.exports = function sysTools() {
             }
         };
 
-        Context.md5 = function (str, as_bin = false) {
+        Context.md5 = function md5(str, as_bin = false) {
             /*
             md5(input:<string|array>,as_bin:<boolean>)
             if as_bin true, input/output is array of 8bit charcodes.
@@ -400,7 +401,7 @@ module.exports = function sysTools() {
 
         };
 
-        Context.toUTF8Array = function (str) {
+        Context.toUTF8Array = function toUTF8Array(str) {
             var utf8 = [];
             for (var i = 0; i < str.length; i++) {
                 var charcode = str.charCodeAt(i);
@@ -430,7 +431,7 @@ module.exports = function sysTools() {
             return utf8;
         }
 
-        Context.sha1 = function (s) {
+        Context.sha1 = function sha1(s) {
 
             const byteToUint8Array = function (byteArray) {
                 var uint8Array = new Uint8Array(byteArray.length);
@@ -558,7 +559,7 @@ module.exports = function sysTools() {
             // string and returns the message digest in hexadecimal.
             return binToHex(core(fillString(byteToUint8Array(toUTF8Array(s)))));
         }
-        Context.sha256 = function (s) {
+        Context.sha256 = function sha256(s) {
             let asciiArray = toUTF8Array(s);
             function rightRotate(value, amount) {
                 return (value >>> amount) | (value << (32 - amount));
@@ -657,24 +658,24 @@ module.exports = function sysTools() {
         };
 
         //for data post-parse
-        Context.toRuDateString = function (d) {
+        Context.toRuDateString = function toRuDateString(d) {
             var date = ("0" + d.getDate()).slice(-2) + "." + ("0" + (d.getMonth() + 1)).slice(-2) + "." + d.getFullYear();
             return date;
         };
-        Context.toRuTimeString = function (d) {
+        Context.toRuTimeString = function toRuTimeString(d) {
             var time = d.getHours() + ":" + ("0" + d.getMinutes(2)).slice(-2) + ":" + ("0" + d.getSeconds(2)).slice(-2);
             return time;
         };
-        Context.toRuDateTimeString = function (d) {
+        Context.toRuDateTimeString = function toRuDateTimeString(d) {
             var date = ("0" + d.getDate()).slice(-2) + "." + ("0" + (d.getMonth() + 1)).slice(-2) + "." + d.getFullYear();
             var time = d.getHours() + ":" + ("0" + d.getMinutes(2)).slice(-2);
             return time + ' ' + date;
         };
-        Context.toLocaleISOString = function (d) {
+        Context.toLocaleISOString = function toLocaleISOString(d) {
             var date = `${d.getFullYear()}-${("0" + (d.getMonth() + 1)).slice(-2)}-${("0" + d.getDate()).slice(-2)}T${("0" + d.getHours()).slice(-2)}:${("0" + d.getMinutes(2)).slice(-2)}:${("0" + d.getSeconds(2)).slice(-2)}`;
             return date
         }
-        Context.struct2flat = function (S) {
+        Context.struct2flat = function struct2flat(S, delimiter = '.') {
             let flat = {};
 
             function resolver(obj, path = "", root = false) {
@@ -687,10 +688,10 @@ module.exports = function sysTools() {
                         resolver(obj[i], _path);
                     }
                 } else {
-                    if (typeof obj == "object" && null != obj) {
+                    if (typeof obj == "object" && null != obj && 0 < Object.keys(obj).length) {
                         let keys = Object.keys(obj);
                         for (let i = 0; i < keys.length; i++) {
-                            let _path = path + (root ? '' : '.') + keys[i];
+                            let _path = path + (root ? '' : delimiter) + keys[i];
                             resolver(obj[keys[i]], _path)
                         }
                     } else {
@@ -705,18 +706,18 @@ module.exports = function sysTools() {
 
             return flat;
         }
-        Context.flat2struct = function (flatObj) {
+        Context.flat2struct = function flat2struct(flatObj, delimiter = '.') {
             const res = {};
             for (const flatKey of Object.keys(flatObj)) {
-                let path = flatKey.split('.');
+                let path = flatKey.split(delimiter);
                 const key = path.pop();
-                path.join('.');
+                path.join(delimiter);
                 const branch = ObjSelector(res, path, true);
                 branch[key] = flatObj[flatKey];
             }
             return res;
         }
-        Context.list2tree = function (list) {
+        Context.list2tree = function list2tree(list) {
             let map = {},
                 node, roots = [],
                 i;
@@ -737,13 +738,36 @@ module.exports = function sysTools() {
             }
             return roots;
         }
-        Context.tree2list = function (tree) {
+        Context.tree2list = function tree2list(tree) {
             //removed dublicated code. struct2flat do the same with more features
             return struct2flat(tree);
         };
+        Context.camel2dotted = function camel2dotted(str) {
+            const ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+            let _str = str;
+            for (const i in str) {
+                if (ABC.indexOf(str[i]) > -1 && str[i - 1] !== ".") {
+                    _str = _str.split(str[i]).join('.' + str[i].toLowerCase())
+                }
+            }
+            return _str
+        }
+        Context.dotted2camel = function dotted2camel(str) {
+            let _str = str;
+            _str = _str.split('.');
+            _str[0] = _str[0].toLowerCase();
+            for (let i = 1; i < _str.length; i++) {
+                _str[i] = _str[i].toLowerCase();
+                _str[i] = _str[i].split('');
+                _str[i][0] = _str[i][0].toUpperCase();
+                _str[i] = _str[i].join('');
+            }
+            _str = _str.join('');
+            return _str
+        }
         //other
 
-        Context.GUID = function () {
+        Context.GUID = function GUID() {
             //not as in RFC, but unique enough and correct in validators. JS is 53-bits integer timestamp and no MICROseconds available
             let guid, yChar, xChar, timestamp;
             yChar = ['8', '9', 'a', 'b'];
@@ -758,6 +782,7 @@ module.exports = function sysTools() {
             // y: positions of allowed hex digits
 
             guid = new Array(37);
+            guid[0] = '';
             guid[9] = '-';
             guid[14] = '-';
             guid[15] = '4';
@@ -779,7 +804,7 @@ module.exports = function sysTools() {
             // replace H positions with timestamp hex digits
             for (let i = 1; i <= 8; i++) { guid[i] = timestamp[i] };
             for (let i = 10; i <= 13; i++) { guid[i] = timestamp[i - 1] };
-            guid.shift(); guid = guid.join('');
+            guid = guid.join('');
             return guid
         }
         /*
@@ -835,7 +860,7 @@ code.google.com/p/crypto-js/wiki/License
                         if (j % 4)
                             for (var k = 0; k < a; k++) c[j + k >>> 2] |= (e[k >>> 2] >>> 24 - 8 * (k % 4) & 255) << 24 - 8 * ((j + k) % 4);
                         else if (65535 < e.length)
-                            for (k = 0; k < a; k += 4) c[j + k >>> 2] = e[k >>> 2];
+                            for (let k = 0; k < a; k += 4) c[j + k >>> 2] = e[k >>> 2];
                         else c.push.apply(c, e);
                         this.sigBytes += a;
                         return this
@@ -1137,7 +1162,7 @@ code.google.com/p/crypto-js/wiki/License
                     this._process();
                     b = this._hash;
                     n = b.words;
-                    for (a = 0; 4 > a; a++) c = n[a], n[a] = (c << 8 | c >>> 24) & 16711935 | (c << 24 | c >>> 8) & 4278255360;
+                    for (let a = 0; 4 > a; a++) c = n[a], n[a] = (c << 8 | c >>> 24) & 16711935 | (c << 24 | c >>> 8) & 4278255360;
                     return b
                 },
                 clone: function () {
@@ -1444,7 +1469,7 @@ code.google.com/p/crypto-js/wiki/License
                                 j % d ? 6 < d && 4 == j % d && (k = l[k >>> 24] << 24 | l[k >>> 16 & 255] << 16 | l[k >>> 8 & 255] << 8 | l[k & 255]) : (k = k << 8 | k >>> 24, k = l[k >>> 24] << 24 | l[k >>> 16 & 255] << 16 | l[k >>> 8 & 255] << 8 | l[k & 255], k ^= H[j / d | 0] << 24);
                                 e[j] = e[j - d] ^ k
                             } c = this._invKeySchedule = [];
-                        for (d = 0; d < a; d++) j = a - d, k = d % 4 ? e[j] : e[j - 4], c[d] = 4 > d || 4 >= j ? k : b[l[k >>> 24]] ^ x[l[k >>> 16 & 255]] ^ q[l[k >>>
+                        for (let d = 0; d < a; d++) j = a - d, k = d % 4 ? e[j] : e[j - 4], c[d] = 4 > d || 4 >= j ? k : b[l[k >>> 24]] ^ x[l[k >>> 16 & 255]] ^ q[l[k >>>
                             8 & 255]] ^ n[l[k & 255]]
                     },
                     encryptBlock: function (a, b) {

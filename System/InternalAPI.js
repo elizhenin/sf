@@ -42,6 +42,7 @@ SF_servercall = eval(SF_servercall).toString();
 
 let sysTools = "";
 if (!empty(Application.sysTools)) {
+    // sysTools = eval(Application.sysTools).toString() + '\nnew SysTools()\n';
     sysTools = eval(Application.sysTools).toString() + '\nsysTools()\n';
     let minify = Application.lib.terser.minify;
     minify(sysTools).then(function (result) {

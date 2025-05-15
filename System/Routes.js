@@ -9,63 +9,6 @@ class ObjectRoute {
     }
 }
 
-module.exports = class Routes extends BaseObject {
-    constructor() {
-        super();
-        let MaxListeners = Application.config.Server.MaxListeners * 1;
-        this.ListenPort = Application.config.Server.Port * 1;
-
-        this.server = Application.lib.http.createServer(async function (req, res) {
-            let ActiveListeners = await getActiveListeners();
-
-            // Application.System.SrvLogger.access(req,res);
-            if (ActiveListeners < MaxListeners) {
-                req.ip = req.headers['x-forwarded-for'] ||
-                    req.socket.remoteAddress ||
-                    null;
-                res.redirect = function (url) {
-                    this.statusCode = 302;
-                    this.setHeader(
-                        'Location', url
-                    )
-                }
-                let Handler = new RequestHandler(req, res);
-                //parse body
-                await Handler.body_parser();
-                //apply middlewares
-                if (!res.writeableEnded) await Handler.middlewares();
-                //try to send static file
-                if (!res.writeableEnded)
-                    if (await Handler.static()) {
-                        //static found and sended
-                    } else {
-                        //static not found
-                        await Handler.router();
-                        if (!Handler.Error) { //all ok
-                            await Handler.send();
-                            Application.System.SrvLogger.access(req, res);
-                        } else { //errors found
-                            console.log(Handler.Error.toString());
-                            Application.System.SrvLogger.error(req, Handler.Error);
-                            if (!res.writeableEnded) res.end(Handler.Error);
-                        }
-                    }
-            } else {
-                console.log(MaxListeners + ' exceeded');
-                Application.System.SrvLogger.error(req, MaxListeners + ' exceeded');
-                res.end('Error: MaxListeners exceeded, try later');
-            }
-        });
-
-        this.server.on('clientError', (err, socket) => {
-            Application.System.SrvLogger.error({}, err);
-            socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-        });
-        this.server.listen(this.ListenPort);
-        console.log("listen started on port " + this.ListenPort);
-    }
-};
-
 const getActiveListeners = function () {
     return new Promise(function (resolve, reject) {
         Application.HTTP.server.getConnections(
@@ -75,7 +18,116 @@ const getActiveListeners = function () {
     })
 }
 
-const RequestHandler = class {
+
+class MultipartFormParser {
+    /**
+          Multipart Parser (Finite State Machine)
+        Author:  Cristian Salazar (christiansalazarh@gmail.com) www.chileshift.cl
+        Modified to class-style by Evgeny Lizhenin (elizhenin@gmail.com)
+    
+     */
+    constructor(header) {
+        let items = header.split(';');
+        if (items)
+            for (let _item of items) {
+                let item = _item.trim();
+                if (item.startsWith('boundary=')) {
+                    let k = item.split('=');
+                    this.boundary = (new String(k[1])).trim();
+                }
+            }
+    }
+    Parse(multipartBodyBuffer) {
+        let lastline = '';
+        let header = '';
+        let info = '';
+        let state = 0;
+        let buffer = [];
+        let allParts = {};
+        if (this.boundary)
+            for (let i = 0; i < multipartBodyBuffer.length; i++) {
+                let oneByte = multipartBodyBuffer[i];
+                let prevByte = i > 0 ? multipartBodyBuffer[i - 1] : null;
+                let newLineDetected = ((oneByte == 0x0a) && (prevByte == 0x0d)) ? true : false;
+                let newLineChar = ((oneByte == 0x0a) || (oneByte == 0x0d)) ? true : false;
+
+                if (!newLineChar)
+                    lastline += String.fromCharCode(oneByte);
+
+                if ((0 == state) && newLineDetected) {
+                    if (("--" + this.boundary) == lastline) {
+                        state = 1;
+                    }
+                    lastline = '';
+                } else
+                    if ((1 == state) && newLineDetected) {
+                        header = lastline;
+                        state = 2;
+                        lastline = '';
+                    } else
+                        if ((2 == state) && newLineDetected) {
+                            info = lastline;
+                            state = 3;
+                            lastline = '';
+                        } else
+                            if ((3 == state) && newLineDetected) {
+                                state = 4;
+                                buffer = [];
+                                lastline = '';
+                            } else
+                                if (4 == state) {
+                                    if (lastline.length > (this.boundary.length + 4)) lastline = ''; // mem save
+                                    if (((("--" + this.boundary) == lastline))) {
+                                        let j = buffer.length - lastline.length;
+                                        let part = buffer.slice(0, j - 1);
+                                        let p = {
+                                            header: header,
+                                            info: info,
+                                            part: part
+                                        };
+                                        let [fieldName, readyPart] = this._processPart(p);
+                                        allParts[fieldName] = readyPart;
+                                        buffer = [];
+                                        lastline = '';
+                                        state = 5;
+                                        header = '';
+                                        info = '';
+                                    } else {
+                                        buffer.push(oneByte);
+                                    }
+                                    if (newLineDetected) lastline = '';
+                                } else
+                                    if (5 == state) {
+                                        if (newLineDetected)
+                                            state = 1;
+                                    }
+            }
+
+        return allParts;
+    };
+
+    _processPart(part) {
+        let header = part.header.split(';');
+        let file = this._createObject(header[2]);
+        let contentType = part.info.split(':')[1].trim();
+        file['type'] = contentType;
+        file['data'] = Buffer.from(part.part);
+        let fieldName = JSON.parse(header[1].split('=')[1].trim());
+        return [fieldName, file];
+    }
+
+    _createObject(pair = '') {
+        let newObj = {},
+            pairAsArray, key, value;
+        pairAsArray = pair.split('=');
+        key = pairAsArray[0].trim();
+        value = JSON.parse(pairAsArray[1].trim());
+        newObj[key] = value;
+        return newObj;
+    }
+};
+
+class RequestHandler {
     constructor(req, res) {
         this.req = req;
         this.res = res;
@@ -258,7 +310,7 @@ const RequestHandler = class {
                                     nsParser.factory(namespace);
                                     Object.assign(nsParser, params);
                                     namespace = await nsParser.render();
-                                    
+
                                     Controller = [namespace, Controller].join('.');
                                 }
                                 if (!empty(route.method)) {
@@ -379,7 +431,7 @@ const RequestHandler = class {
                 return result;
             },
             "multipart/form-data": async function (body, ContentTypeParams) {
-                let multipart = new multipartFormParser(ContentTypeParams);
+                let multipart = new MultipartFormParser(ContentTypeParams);
                 let parts = multipart.Parse(body);
                 return parts;
             }
@@ -454,110 +506,62 @@ const RequestHandler = class {
     }
 };
 
-const multipartFormParser = class {
-    /**
-          Multipart Parser (Finite State Machine)
-        Author:  Cristian Salazar (christiansalazarh@gmail.com) www.chileshift.cl
-        Modified to class-style by Evgeny Lizhenin (elizhenin@gmail.com)
-    
-     */
-    constructor(header) {
-        let items = header.split(';');
-        if (items)
-            for (let _item of items) {
-                let item = _item.trim();
-                if (item.startsWith('boundary=')) {
-                    let k = item.split('=');
-                    this.boundary = (new String(k[1])).trim();
+
+module.exports = class Routes extends BaseObject {
+    static RequestHandler = RequestHandler;
+    constructor() {
+        super();
+        this.ListenPort = Application.config.Server.Port * 1;
+
+        this.server = Application.lib.http.createServer(async function (req, res) {
+            let MaxListeners = Application.config.Server.MaxListeners * 1;
+
+            let ActiveListeners = await getActiveListeners();
+
+            // Application.System.SrvLogger.access(req,res);
+            if (ActiveListeners < MaxListeners) {
+                req.ip = req.headers['x-forwarded-for'] ||
+                    req.socket.remoteAddress ||
+                    null;
+                res.redirect = function (url) {
+                    this.statusCode = 302;
+                    this.setHeader(
+                        'Location', url
+                    )
                 }
-            }
-    }
-    Parse(multipartBodyBuffer) {
-        let lastline = '';
-        let header = '';
-        let info = '';
-        let state = 0;
-        let buffer = [];
-        let allParts = {};
-        if (this.boundary)
-            for (let i = 0; i < multipartBodyBuffer.length; i++) {
-                let oneByte = multipartBodyBuffer[i];
-                let prevByte = i > 0 ? multipartBodyBuffer[i - 1] : null;
-                let newLineDetected = ((oneByte == 0x0a) && (prevByte == 0x0d)) ? true : false;
-                let newLineChar = ((oneByte == 0x0a) || (oneByte == 0x0d)) ? true : false;
-
-                if (!newLineChar)
-                    lastline += String.fromCharCode(oneByte);
-
-                if ((0 == state) && newLineDetected) {
-                    if (("--" + this.boundary) == lastline) {
-                        state = 1;
+                let Handler = new Routes.RequestHandler(req, res);
+                //parse body
+                await Handler.body_parser();
+                //apply middlewares
+                if (!res.writeableEnded) await Handler.middlewares();
+                //try to send static file
+                if (!res.writeableEnded)
+                    if (await Handler.static()) {
+                        //static found and sended
+                    } else {
+                        //static not found
+                        await Handler.router();
+                        if (!Handler.Error) { //all ok
+                            await Handler.send();
+                            Application.System.SrvLogger.access(req, res);
+                        } else { //errors found
+                            console.log(Handler.Error.toString());
+                            Application.System.SrvLogger.error(req, Handler.Error);
+                            if (!res.writeableEnded) res.end(Handler.Error);
+                        }
                     }
-                    lastline = '';
-                } else
-                    if ((1 == state) && newLineDetected) {
-                        header = lastline;
-                        state = 2;
-                        lastline = '';
-                    } else
-                        if ((2 == state) && newLineDetected) {
-                            info = lastline;
-                            state = 3;
-                            lastline = '';
-                        } else
-                            if ((3 == state) && newLineDetected) {
-                                state = 4;
-                                buffer = [];
-                                lastline = '';
-                            } else
-                                if (4 == state) {
-                                    if (lastline.length > (this.boundary.length + 4)) lastline = ''; // mem save
-                                    if (((("--" + this.boundary) == lastline))) {
-                                        let j = buffer.length - lastline.length;
-                                        let part = buffer.slice(0, j - 1);
-                                        let p = {
-                                            header: header,
-                                            info: info,
-                                            part: part
-                                        };
-                                        let [fieldName, readyPart] = this._processPart(p);
-                                        allParts[fieldName] = readyPart;
-                                        buffer = [];
-                                        lastline = '';
-                                        state = 5;
-                                        header = '';
-                                        info = '';
-                                    } else {
-                                        buffer.push(oneByte);
-                                    }
-                                    if (newLineDetected) lastline = '';
-                                } else
-                                    if (5 == state) {
-                                        if (newLineDetected)
-                                            state = 1;
-                                    }
+            } else {
+                console.log(MaxListeners + ' exceeded');
+                Application.System.SrvLogger.error(req, MaxListeners + ' exceeded');
+                res.end('Error: MaxListeners exceeded, try later');
             }
+        });
 
-        return allParts;
-    };
-
-    _processPart(part) {
-        let header = part.header.split(';');
-        let file = this._createObject(header[2]);
-        let contentType = part.info.split(':')[1].trim();
-        file['type'] = contentType;
-        file['data'] = Buffer.from(part.part);
-        let fieldName = JSON.parse(header[1].split('=')[1].trim());
-        return [fieldName, file];
-    }
-
-    _createObject(pair = '') {
-        let newObj = {},
-            pairAsArray, key, value;
-        pairAsArray = pair.split('=');
-        key = pairAsArray[0].trim();
-        value = JSON.parse(pairAsArray[1].trim());
-        newObj[key] = value;
-        return newObj;
+        this.server.on('clientError', (err, socket) => {
+            Application.System.SrvLogger.error({}, err);
+            socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+        });
+        this.server.listen(this.ListenPort);
+        console.log("listen started on port " + this.ListenPort);
     }
 };

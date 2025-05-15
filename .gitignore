@@ -3,6 +3,8 @@ access.log
 error.log
 package-lock.json
 .idea
+.vscode/
 sonar
 .scannernetwork/
+Dump/
 classLoadingOrder.json

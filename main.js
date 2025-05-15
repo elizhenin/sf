@@ -31,8 +31,24 @@
     Application.config.Directories.App = "Application";
     Application.config.Directories.Test = "Test";
     Application.config.Directories.AppPublic = "Public";
+    Application.config.Directories.Dump = "Dump";
     for (const key in Application.config.Directories) {
         Application.config.Directories[key] = Application.lib.path.join(Application._dirname, Application.config.Directories[key]);
+    }
+
+    dump = function (filename, obj) {
+        try {
+            if (!Application.lib.fs.existsSync(Application.config.Directories.Dump)) {
+                Application.lib.fs.mkdirSync(Application.config.Directories.Dump, { recursive: true });
+            }
+            Application.lib.fs.writeFileSync(
+                Application.lib.path.join(
+                    Application.config.Directories.Dump,
+                    `${toLocaleISOString(new Date(Now())).replace(/\D/g, "")}_${filename}.json`
+                ),
+                JSON.stringify(obj, ' ', 2)
+            );
+        } catch (e) { console.log(e) }
     }
 
     //load config from ini
