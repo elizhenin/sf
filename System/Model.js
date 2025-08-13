@@ -27,7 +27,7 @@ module.exports = class Model extends BaseObject {
 
         for (const arg of args) {
             switch (true) {
-                case (arg instanceof String): {
+                case (typeof arg === 'string'): {
                     this.#dbConfigName = arg;
                     break
                 }
