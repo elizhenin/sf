@@ -108,16 +108,11 @@
 
         //call AppLoader to load other MVC code
         Application._appReady = true;
-        new Application.System.AppLoader();
+        const AppLoader = new Application.System.AppLoader();
+        await AppLoader.load();
 
         let _continueInit = async function () {
             if (Application._appReady) {
-                //save class init order
-                let ClassLoadingOrderRebuild = Application.config.Server.ClassLoadingOrderRebuild ?? 'true';
-                if (ClassLoadingOrderRebuild == 'true') {
-                    const filename = 'classLoadingOrder.json';
-                    Application.lib.fs.writeFileSync(Application.lib.path.join(Application._dirname, filename), JSON.stringify(Application._ClassLoadingOrder, ' ', 2));
-                }
                 //set up databases
                 Application.DB = {};
                 for (let key in Application.database) {

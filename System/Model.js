@@ -16,7 +16,7 @@ module.exports = class Model extends BaseObject {
         return this.#dbConfigName
     }
 
-    constructor(_arg1 = null, _arg2 = null /*db config name | other moder | called controller */) {
+    constructor(_arg1 = null, _arg2 = null /*db config name | other model | called controller */) {
         super();
 
         this.#dbConfigName = default_db_config

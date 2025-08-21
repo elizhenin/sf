@@ -1,7 +1,6 @@
 // export AppLoader
 module.exports = class AppLoader extends BaseObject {
-    constructor() {
-        super();
+    async load() {
         let ClassLoadingOrderRebuild = Application.config.Server.ClassLoadingOrderRebuild ?? 'true';
         let CurrentDirectory = Application.config.Directories.App;
         let ClassLoadingOrder = [];
@@ -138,20 +137,26 @@ module.exports = class AppLoader extends BaseObject {
 
         if (ClassLoadingOrderRebuild == 'false') Application._appReady = false;
 
-        PopularizeCollections(Application, CurrentDirectory, PopularizeCollections).then(() => {
-            if (ClassLoadingOrderRebuild == 'false') {
-                const classList = require(Application.lib.path.join(Application._dirname, 'classLoadingOrder.json'));
-                for (const filename of classList) {
-                    let classpath = filename.slice(0, -('js'.length + 1)).split(Application.lib.path.sep);
-                    const entityName = classpath.pop();
-                    const shortcut = [...classpath, entityName].join('_');
-                    classpath = classpath.join('.');
-                    let targetObject = empty(classpath) ? Application : ObjSelector(Application, classpath);
-                    targetObject[entityName] = require(Application.lib.path.join(Application.config.Directories.App, filename));
-                    if (2 > shortcut.split('_').length) { } else { global[shortcut] = targetObject[entityName]; }
-                }
-                Application._appReady = true;
+        await PopularizeCollections(Application, CurrentDirectory, PopularizeCollections);
+        if (ClassLoadingOrderRebuild == 'false') {
+            const classList = require(Application.lib.path.join(Application._dirname, 'classLoadingOrder.json'));
+            for (const filename of classList) {
+                let classpath = filename.slice(0, -('js'.length + 1)).split(Application.lib.path.sep);
+                const entityName = classpath.pop();
+                const shortcut = [...classpath, entityName].join('_');
+                classpath = classpath.join('.');
+                let targetObject = empty(classpath) ? Application : ObjSelector(Application, classpath);
+                targetObject[entityName] = require(Application.lib.path.join(Application.config.Directories.App, filename));
+                if (2 > shortcut.split('_').length) { } else { global[shortcut] = targetObject[entityName]; }
             }
-        });
+            Application._appReady = true;
+        }
+
+
+        //save class init order
+        if (ClassLoadingOrderRebuild == 'true') {
+            const filename = 'classLoadingOrder.json';
+            Application.lib.fs.writeFileSync(Application.lib.path.join(Application._dirname, filename), JSON.stringify(Application._ClassLoadingOrder, ' ', 2));
+        }
     }
 }
