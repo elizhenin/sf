@@ -111,11 +111,11 @@
         const AppLoader = new Application.System.AppLoader();
         await AppLoader.load();
 
-        let _continueInit = async function () {
+        const _continueInit = function () {
             if (Application._appReady) {
                 //set up databases
                 Application.DB = {};
-                for (let key in Application.database) {
+                for (const key in Application.database) {
                     const db_config = Application.database[key];
                     Application.DB[key] = require('knex')(db_config);
                 }
@@ -131,7 +131,7 @@
 
             } else setTimeout(_continueInit, 100);
         }
-        await _continueInit();
+        _continueInit();
     }
 
     //finish main code, do the work

@@ -18,6 +18,42 @@ module.exports = class AppLoader extends BaseObject {
                 } else {
                     const ext = item.split('.').reverse()[0].toLowerCase();
                     switch (ext) {
+                        case "mjs": {
+                            if (ClassLoadingOrderRebuild == 'false') break;
+                            let ObjName = item.slice(0, -(ext.length + 1)); //remove ".mjs" symbols from end
+                            //add this js to namespace
+                            const _init = async function (firstTry = false) {
+                                const filename = Application.lib.path.join(Directory, item);
+                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -(ext.length + 1)).split(Application.lib.path.sep).join('_');
+                                if (2 > classname.split('_').length) classname = false;
+                                try {
+                                    rootNode[ObjName] = (await import(filename)).default;
+                                    if (classname) global[classname] = rootNode[ObjName];
+                                    if (!firstTry) {
+                                        delete ClassesWaitingRetry[filename];
+                                        if (empty(Object.keys(ClassesWaitingRetry))) {
+                                            Application._appReady = true;
+                                        }
+                                        console.log(filename + ' now ready')
+                                    };
+                                    ClassLoadingOrder.push(filename.slice(Application.config.Directories.App.length + 1));
+                                } catch (e) {
+                                    Application._appReady = false;
+                                    ClassesWaitingRetry[filename] = true;
+                                    if (
+                                        "TypeError: Class extends value undefined is not a constructor or null" === e.toString()
+                                    ) {
+                                        console.log(`${filename} waiting retry [${e}]`)
+                                    } else {
+                                        console.log(e);
+                                        console.log(`\n${filename} waiting retry`)
+                                    }
+                                    setTimeout(_init, 100)
+                                }
+                            }
+                            await _init(true);
+                            break
+                        }
                         case "js": {
                             if (ClassLoadingOrderRebuild == 'false') break;
                             let ObjName = item.slice(0, -(ext.length + 1)); //remove ".js" symbols from end
@@ -55,14 +91,20 @@ module.exports = class AppLoader extends BaseObject {
                             break
                         }
                         case "json": {
-                            let ObjName = item.slice(0, -(ext.length + 1)); //remove ".json" symbols from end
-                            //add this json object to namespace
-                            rootNode[ObjName] = JSON.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
-                            //global classname
-                            let filename = Application.lib.path.join(Directory, item)
-                            let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -(ext.length + 1)).split(Application.lib.path.sep).join('_')
-                            if (2 > classname.split('_').length) classname = false
-                            if (classname) global[classname] = rootNode[ObjName]
+                            try {
+                                let ObjName = item.slice(0, -(ext.length + 1)); //remove ".json" symbols from end
+                                //add this json object to namespace
+                                rootNode[ObjName] = JSON.parse(Application.lib.fs.readFileSync(Application.lib.path.join(Directory, item)).toString('utf8'))
+                                //global classname
+                                let filename = Application.lib.path.join(Directory, item)
+                                let classname = filename.slice(CurrentDirectory.length + 1).slice(0, -(ext.length + 1)).split(Application.lib.path.sep).join('_')
+                                if (2 > classname.split('_').length) classname = false
+                                if (classname) global[classname] = rootNode[ObjName]
+                            } catch (e) {
+                                Application._appReady = false;
+                                console.log(`Error on ${Application.lib.path.join(Directory, item)}`)
+                                console.log(e);
+                            }
                             break
                         }
                         case "ini": {
@@ -141,13 +183,31 @@ module.exports = class AppLoader extends BaseObject {
         if (ClassLoadingOrderRebuild == 'false') {
             const classList = require(Application.lib.path.join(Application._dirname, 'classLoadingOrder.json'));
             for (const filename of classList) {
-                let classpath = filename.slice(0, -('js'.length + 1)).split(Application.lib.path.sep);
-                const entityName = classpath.pop();
-                const shortcut = [...classpath, entityName].join('_');
-                classpath = classpath.join('.');
-                let targetObject = empty(classpath) ? Application : ObjSelector(Application, classpath);
-                targetObject[entityName] = require(Application.lib.path.join(Application.config.Directories.App, filename));
-                if (2 > shortcut.split('_').length) { } else { global[shortcut] = targetObject[entityName]; }
+                const isESModule = filename.endsWith('.mjs');
+                const isCommonJS = filename.endsWith('.js');
+                switch (true) {
+                    case isESModule: {
+                        let classpath = filename.slice(0, -('mjs'.length + 1)).split(Application.lib.path.sep);
+                        const entityName = classpath.pop();
+                        const shortcut = [...classpath, entityName].join('_');
+                        classpath = classpath.join('.');
+                        let targetObject = empty(classpath) ? Application : ObjSelector(Application, classpath);
+                        targetObject[entityName] = (await import(Application.lib.path.join(Application.config.Directories.App, filename))).default;
+                        if (2 > shortcut.split('_').length) { } else { global[shortcut] = targetObject[entityName]; }
+                        break;
+                    }
+                    case isCommonJS: {
+                        let classpath = filename.slice(0, -('js'.length + 1)).split(Application.lib.path.sep);
+                        const entityName = classpath.pop();
+                        const shortcut = [...classpath, entityName].join('_');
+                        classpath = classpath.join('.');
+                        let targetObject = empty(classpath) ? Application : ObjSelector(Application, classpath);
+                        targetObject[entityName] = require(Application.lib.path.join(Application.config.Directories.App, filename));
+                        if (2 > shortcut.split('_').length) { } else { global[shortcut] = targetObject[entityName]; }
+                        break;
+                    }
+                }
+
             }
             Application._appReady = true;
         }
@@ -155,8 +215,16 @@ module.exports = class AppLoader extends BaseObject {
 
         //save class init order
         if (ClassLoadingOrderRebuild == 'true') {
-            const filename = 'classLoadingOrder.json';
-            Application.lib.fs.writeFileSync(Application.lib.path.join(Application._dirname, filename), JSON.stringify(Application._ClassLoadingOrder, ' ', 2));
+            const _save = function name(params) {
+                if (Application._appReady) {
+                    const filename = 'classLoadingOrder.json';
+                    Application.lib.fs.writeFileSync(Application.lib.path.join(Application._dirname, filename), JSON.stringify(Application._ClassLoadingOrder, ' ', 2));
+                    return;
+                }
+                console.log(`Classes waiting retry: ${Object.keys(ClassesWaitingRetry).length}`);
+                setTimeout(_save, 100)
+            }
+            _save();
         }
     }
 }

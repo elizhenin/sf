@@ -6,6 +6,8 @@ class ObjectRoute {
         this.controller = route?.controller ?? null; //Controller name
         this.action = route?.action ?? null; // action name
         this.uri = route?.uri ?? null; // uri pattern for this route
+
+        this.method = Array.isArray(this.method) ? this.method : [this.method]
     }
 }
 
@@ -190,6 +192,18 @@ class RequestHandler {
             let filepath = Application.lib.path.join(Application.config.Directories.AppPublic, decodeURI(this.req.path));
             let stat;
             try {
+                //deny hidden
+                const pathArray = filepath.split(Application.lib.path.sep);
+                for (const name of pathArray) {
+                    if (name.startsWith('.')) {
+                        result = false
+                    }
+                }
+            } catch (e) {
+                result = false
+            }
+            try {
+                //deny directory
                 stat = await Application.lib.fs_promises.stat(filepath);
                 if (stat.isDirectory()) result = false;
             } catch (e) {
@@ -313,13 +327,20 @@ class RequestHandler {
 
                                     Controller = [namespace, Controller].join('.');
                                 }
-                                if (!empty(route.method)) {
+
+                                if (route.method.length > 0) {
                                     /* method is stricted - compare with request*/
-                                    if (route.method.toLowerCase() === this.req.method.toLowerCase())
+                                    if (route.method.find(i => i.toLowerCase() === this.req.method.toLowerCase())) {
                                         await this.handler(Controller, action, route);
+                                        break;
+                                    }
                                 } /* method is not stricted */
-                                else await this.handler(Controller, action, route);
-                                break;
+                                else {
+                                    await this.handler(Controller, action, route);
+
+                                    break;
+                                }
+
                             }
                         }
                         break;
@@ -366,9 +387,15 @@ class RequestHandler {
         if (-1 === ["undefined", "object"].indexOf(typeof ObjSelector(Application.Controller, Controller))) {
             let _Controller = ObjSelector(Application.Controller, Controller);
             _Controller = new _Controller(this.req, this.res, Controller, action, route);
+            const args = {
+                params: this.req.params,
+                query: this.req.query,
+                headers: this.req.headers,
+                body: this.req.body ?? null
+            }
             //1
             try {
-                await _Controller._before();
+                await _Controller._before(args);
             } catch (e) {
                 //found error on controller._before stage
                 this.Error = "Application.Controller." + Controller + "._before() causes problem " + " [" + e + "]";
@@ -377,7 +404,7 @@ class RequestHandler {
 
             //2
             try {
-                if (!this.Error) await _Controller['action_' + _Controller._action](...Object.values(this.req.params));
+                if (!this.Error) await _Controller['action_' + _Controller._action](args);
             } catch (e) {
                 //found error on controller.action stage
                 this.Error = "Application.Controller." + Controller + "." + _Controller._action + "() causes problem " + " [" + e + "]";
@@ -385,7 +412,7 @@ class RequestHandler {
             }
             //3
             try {
-                if (!this.Error) result = await _Controller._after();
+                if (!this.Error) result = await _Controller._after(args);
             } catch (e) {
                 //found error on controller._after stage
                 this.Error = "Application.Controller." + Controller + "._after() causes problem " + " [" + e + "]";
